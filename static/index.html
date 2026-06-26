@@ -313,7 +313,7 @@ textarea.finput{resize:vertical;min-height:72px}
         <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M11.571 11.429L6.857 6l-1.714 1.714 4 4.286-4 4.286L6.857 18l4.714-4.857c.571-.571.571-1.143 0-1.714zm1.714 0l4.714 4.857L19.714 18 15 13.714l4-4.286L17.286 6 12.57 10.857c-.571.571-.571 1.143 0 1.714z"/></svg>
         Jira Configuration
       </div>
-      <div class="sb-ver">v2.0 · Powered by NVIDIA NIM</div>
+      <div id="rag-badge" class="sb-ver">v2.0 · Powered by NVIDIA NIM</div>
     </div>
   </div>
 
@@ -345,12 +345,25 @@ const S = {
   jiraOpen: false, jiraTab: 'config', importResult: null,
   chatMsgs: [], chatLoading: false, newCasesAdded: 0,
   jiraCfg: { jira_url:'', project_key:'', user_email:'', api_token:'' },
+  rag: { ready: false, chunks: 0, source: null },
+  release: 'R1',
 };
 let progressTimer = null;
 const PAGE = 20;
-const MODULES = ['Order Management','Billing / Charging','Contract Management',
-  'Product Catalog','Customer Management','Provisioning / Activation','Reporting / Analytics'];
-const TYPES = ['Functional','API/Integration','End-to-End (E2E)','Regression','Smoke','Sanity'];
+const MODULES = [
+  'Customer Portal','Contracts / CIM','CPQ / EPC','Order Management',
+  'Provisioning / Activation','Billing / Charging','Inv. & Accounting',
+  'API / Integration','ServiceNow / ITSM'
+];
+const TYPES = [
+  'Functional','API/Integration','End-to-End (E2E)','Regression',
+  'Performance (API Level)','UAT','Migration Data Validation','Smoke','Sanity'
+];
+const RELEASES = [
+  {val:'R1', label:'R1 – Foundation Release', desc:'New DP onboarding, core E2E journeys, initial regression'},
+  {val:'R2', label:'R2 – Migration Ramp Up',  desc:'Migration data validation, billing correctness, progression automation'},
+  {val:'R3', label:'R3 – Full Migration',      desc:'Full E2E regression, performance validation, go-live readiness'},
+];
 const SUGGESTS = ['Add more edge cases for failure scenarios','Generate negative test cases',
   'Add performance-focused test cases','Explain TC-001 in more detail','What test cases cover Zuora integration?'];
 
@@ -470,8 +483,10 @@ function renderEmpty() {
 
 // ─── Form ─────────────────────────────────────────────────────────────────────
 function renderForm() {
-  const modOpts = MODULES.map(m=>`<option>${esc(m)}</option>`).join('');
+  const modOpts = MODULES.map(m=>`<option${m===S.module?' selected':''}>${esc(m)}</option>`).join('');
   const typOpts = TYPES.map(t=>`<option>${esc(t)}</option>`).join('');
+  const relOpts = RELEASES.map(r=>`<option value="${r.val}"${r.val===S.release?' selected':''}>${esc(r.label)}</option>`).join('');
+  const selRel = RELEASES.find(r=>r.val===S.release)||RELEASES[0];
   return `<div class="card" style="margin-bottom:22px">
     <div class="card-head">
       <div class="card-title">
@@ -483,10 +498,16 @@ function renderForm() {
     <div class="card-body">
       ${S.error?`<div class="error-box"><span>⚠️</span><div><strong>Generation failed.</strong> ${esc(S.error)}</div></div>`:''}
       <div class="form-grid">
-        <div class="fg"><label class="flbl">Module</label>
+        <div class="fg"><label class="flbl">Module / System</label>
           <select class="finput" id="f-module">${modOpts}</select></div>
         <div class="fg"><label class="flbl">Test Type</label>
           <select class="finput" id="f-type">${typOpts}</select></div>
+        <div class="fg full">
+          <label class="flbl">Release
+            <span style="margin-left:8px;font-size:11px;font-weight:400;color:var(--txt3)" id="rel-desc">${esc(selRel.desc)}</span>
+          </label>
+          <select class="finput" id="f-release" onchange="S.release=this.value;document.getElementById('rel-desc').textContent=RELEASES.find(r=>r.val===this.value)?.desc||''">${relOpts}</select>
+        </div>
         <div class="fg full"><label class="flbl">Feature Title <span style="color:var(--red)">*</span></label>
           <input class="finput" id="f-title" placeholder="e.g. Streamlined Order Journey — LEO Satellite Service Activation"
             onkeydown="if(event.key==='Enter')generate()"/></div>
@@ -889,6 +910,7 @@ function render() {
   renderStats();
   renderMain();
   renderModal();
+  updateRagBadge();
 }
 function renderModal() {
   document.getElementById('modal-root').innerHTML = renderJiraModal();
@@ -938,8 +960,10 @@ async function generate() {
   if (!title) { document.getElementById('f-title')?.focus(); return; }
   const module = document.getElementById('f-module')?.value||MODULES[0];
   const testType = document.getElementById('f-type')?.value||TYPES[0];
+  const release = document.getElementById('f-release')?.value||'R1';
   const description = document.getElementById('f-desc')?.value||'';
   const testerName = document.getElementById('f-tester')?.value||'Anonymous';
+  S.release = release;
 
   S.loading=true; S.error=null; S.progress=0; S.current=null;
   S.chatMsgs=[]; S.newCasesAdded=0; render();
@@ -959,7 +983,7 @@ async function generate() {
   },400);
 
   try {
-    const session = await api('POST','/api/generate',{featureTitle:title,description,module,testType,testerName});
+    const session = await api('POST','/api/generate',{featureTitle:title,description,module,testType,release,testerName});
     clearInterval(progressTimer);
     S.current=session; S.tab='testcases'; S.tcPage=0; S.tcSearch='';
     S.chatMsgs=[{role:'bot',text:`Hi! I've reviewed ${session.test_cases.length} test cases for "${session.feature_title}". Ask me anything — I can explain, refine, or generate additional test cases for specific areas.`}];
@@ -1050,10 +1074,22 @@ async function generateJiraPreview() {
 }
 
 // ─── Boot ─────────────────────────────────────────────────────────────────────
+function updateRagBadge() {
+  const el = document.getElementById('rag-badge');
+  if (!el) return;
+  if (S.rag.ready) {
+    el.innerHTML = `<span style="color:#22c55e">&#9679;</span> RAG Active &middot; ${S.rag.chunks} chunks`;
+  } else {
+    el.innerHTML = `v2.0 &middot; Powered by NVIDIA NIM`;
+  }
+}
+
 async function init() {
   S.sessions = await api('GET','/api/sessions').catch(()=>[]);
   try { const cfg=await api('GET','/api/jira/config'); S.jiraCfg={...S.jiraCfg,...cfg}; } catch{}
+  try { S.rag=await api('GET','/api/rag/status'); } catch{}
   render();
+  updateRagBadge();
 }
 init();
 </script>

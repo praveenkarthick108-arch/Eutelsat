@@ -1,20 +1,42 @@
+import threading
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from sqlalchemy import text
 
-from database import engine
+from database import engine, SessionLocal
 import models
 from routes import generate, sessions, testcases, export, scope
 from routes import followup, jira as jira_routes
+from routes import rag as rag_routes
+from rag import ingest as rag_ingest
+from ai_pipeline import client
+
+
+def _background_ingest():
+    """Run RAG ingest in a background thread so startup is non-blocking."""
+    db = SessionLocal()
+    try:
+        result = rag_ingest.ingest(db, client, force=False)
+        status = result.get("status")
+        if status == "ingested":
+            print(f"[RAG] Ingested {result['chunks']} chunks from {result['source']}")
+        elif status == "already_ingested":
+            print(f"[RAG] Ready: {result['chunks']} chunks from {result['source']}")
+        else:
+            print(f"[RAG] Startup ingest result: {result}")
+    except Exception as e:
+        print(f"[RAG] Background ingest failed (non-fatal): {e}")
+    finally:
+        db.close()
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     models.Base.metadata.create_all(bind=engine)
 
-    # Incremental column migrations — safe to re-run (errors mean column exists)
+    # Incremental column migrations — safe to re-run (errors mean column already exists)
     migrations = [
         "ALTER TABLE test_cases ADD COLUMN confidence_score REAL DEFAULT 0.85",
         "ALTER TABLE test_cases ADD COLUMN hallucination_risk TEXT DEFAULT 'Low'",
@@ -26,9 +48,15 @@ async def lifespan(app: FastAPI):
                 conn.execute(text(sql))
                 conn.commit()
             except Exception:
-                pass  # column already exists
+                pass
 
     print("Database ready")
+
+    # Kick off RAG ingest in the background — server starts immediately
+    t = threading.Thread(target=_background_ingest, daemon=True)
+    t.start()
+    print("[RAG] Background ingest started...")
+
     yield
 
 
@@ -45,6 +73,7 @@ app.include_router(export.router,        prefix="/api", tags=["export"])
 app.include_router(scope.router,         prefix="/api", tags=["scope"])
 app.include_router(followup.router,      prefix="/api", tags=["followup"])
 app.include_router(jira_routes.router,   prefix="/api", tags=["jira"])
+app.include_router(rag_routes.router,    prefix="/api", tags=["rag"])
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 

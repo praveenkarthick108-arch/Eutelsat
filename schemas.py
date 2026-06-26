@@ -9,6 +9,7 @@ class GenerateRequest(BaseModel):
     module: str
     featureSelected: str = ""
     testType: str
+    release: str = "R1"
     count: int = 15  # kept for compat, ignored by pipeline
     testerName: str = "Anonymous"
 

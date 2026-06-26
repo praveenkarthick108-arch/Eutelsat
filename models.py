@@ -68,3 +68,14 @@ class JiraConfig(Base):
     api_token = Column(String(500), default="")
     user_email = Column(String(200), default="")
     updated_at = Column(DateTime, default=datetime.utcnow)
+
+
+class DocumentChunk(Base):
+    __tablename__ = "document_chunks"
+
+    id = Column(Integer, primary_key=True, index=True)
+    source = Column(String(200), nullable=False, index=True)
+    chunk_index = Column(Integer, nullable=False)
+    text = Column(Text, nullable=False)
+    embedding = Column(Text, default="[]")  # JSON float array
+    created_at = Column(DateTime, default=datetime.utcnow)

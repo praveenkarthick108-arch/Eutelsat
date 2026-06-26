@@ -7,8 +7,9 @@ from sqlalchemy.orm import Session
 from database import get_db
 import models
 from schemas import GenerateRequest, SessionOut
-from ai_pipeline import run_pipeline
+from ai_pipeline import run_pipeline, client
 from scope_data import SCOPE, RELATED
+from rag import retriever as rag_retriever
 
 router = APIRouter()
 
@@ -95,9 +96,20 @@ def generate_test_cases(req: GenerateRequest, db: Session = Depends(get_db)):
             db.commit()
             return cached_session
 
+    # RAG context retrieval
+    rag_query = f"{req.featureTitle} {req.module} {req.testType}"
+    try:
+        rag_context = rag_retriever.retrieve(rag_query, db, client)
+    except Exception as e:
+        print(f"[RAG] Retrieval failed (non-fatal): {e}")
+        rag_context = ""
+
     # Run AI pipeline
     try:
-        test_cases = run_pipeline(req.featureTitle, req.description, req.module, req.testType)
+        test_cases = run_pipeline(
+            req.featureTitle, req.description, req.module, req.testType,
+            rag_context, getattr(req, "release", "R1")
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"AI pipeline failed: {str(e)}")
 

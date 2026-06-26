@@ -19,6 +19,13 @@ client = OpenAI(
 
 MODEL = "openai/gpt-oss-20b"
 
+SYSTEM_STACK = (
+    "GEO Community Cloud Portal, GCRM Salesforce (contracts), Zuora (CPQ/billing/re-rating), "
+    "GEO Salesforce + Celfocus OM (order management), Axiros (LEO device provisioning), "
+    "Oracle BRM / O-BRM (billing engine), SAP S4HANA (invoicing/accounting), "
+    "MuleSoft LEO (integration middleware), ServiceNow (ITSM/incident management)"
+)
+
 
 def _call(prompt: str, max_tokens: int = 4096) -> str:
     completion = client.chat.completions.create(
@@ -52,18 +59,37 @@ def _extract_json(text: str):
 
 # ── Agent 1: Scout ────────────────────────────────────────────────────────────
 
-def scout_agent(feature_title: str, module: str, test_type: str) -> list[str]:
+def scout_agent(
+    feature_title: str,
+    module: str,
+    test_type: str,
+    rag_context: str = "",
+    release: str = "R1",
+) -> list[str]:
     """Identify 7 distinct test scenario areas for thorough coverage."""
-    prompt = f"""You are a senior QA architect for the Eutelsat satellite telecommunications BSS/OSS project (Release 1).
-Systems involved: GEO Community Cloud portal, GCRM Salesforce (contracts), Zuora (CPQ/billing), GEO Salesforce (orders), O-BRM (billing), SAP (invoicing).
-
+    context_block = ""
+    if rag_context:
+        context_block = f"""
+Relevant project documentation (use to make scenario areas more specific):
+{rag_context}
+"""
+    from scope_data import RELEASES
+    rel = RELEASES.get(release, RELEASES["R1"])
+    release_block = (
+        f"\nRelease context: {rel['name']} — {rel['focus']}\n"
+        f"Test focus for this release: {', '.join(rel['test_focus'])}\n"
+    )
+    prompt = f"""You are a senior QA architect for the Eutelsat satellite telecommunications BSS/OSS programme (CxP).
+Full hybrid stack: {SYSTEM_STACK}
+{release_block}{context_block}
 Analyze this feature and identify exactly 7 distinct test scenario areas for thorough {test_type} coverage.
 
 Module: {module}
 Feature: {feature_title}
 Test Type: {test_type}
 
-Each area must be specific and actionable — covering happy paths, edge cases, negative scenarios, and integration points.
+Each area must be specific and actionable — covering happy paths, edge cases, negative scenarios, integration points, and system boundaries.
+Reference actual systems (Celfocus, Axiros, Zuora, Oracle BRM, SAP S4HANA, MuleSoft) where relevant.
 Return ONLY a JSON array of exactly 7 strings, no markdown, no explanation:
 ["scenario area 1", "scenario area 2", ..., "scenario area 7"]"""
 
@@ -94,11 +120,28 @@ def generator_agent(
     module: str,
     test_type: str,
     count: int = 5,
+    rag_context: str = "",
+    release: str = "R1",
 ) -> list[dict]:
     """Generate test cases for a specific scenario area."""
-    prompt = f"""You are a senior QA engineer for the Eutelsat Release 1 BSS/OSS project.
-Systems: GEO Community Cloud portal, GCRM Salesforce (contracts), Zuora (CPQ/billing), GEO Salesforce (orders), O-BRM (billing), SAP (invoicing).
+    context_block = ""
+    if rag_context:
+        context_block = f"""
+Project documentation context:
+{rag_context}
 
+"""
+    from scope_data import RELEASES, KPI_TARGETS
+    rel = RELEASES.get(release, RELEASES["R1"])
+    kpi_block = (
+        f"KPI targets to keep in mind: ordering automation {KPI_TARGETS['ordering_automation']}, "
+        f"billing accuracy {KPI_TARGETS['billing_accuracy']}, "
+        f"API response time {KPI_TARGETS['api_response_time']}."
+    )
+    prompt = f"""You are a senior QA engineer for the Eutelsat CxP BSS/OSS programme ({rel['name']}).
+Full hybrid stack: {SYSTEM_STACK}
+{kpi_block}
+{context_block}
 Generate exactly {count} {test_type} test cases for this specific scenario area:
 
 Feature: {feature_title}
@@ -121,8 +164,8 @@ Rules:
 - Reference actual systems (Zuora, GCRM, GEO portal, etc.) where relevant"""
 
     try:
-        response = _call(prompt)
-        cases = _extract_json(response)
+        resp = _call(prompt)
+        cases = _extract_json(resp)
         if isinstance(cases, list):
             return cases
     except Exception as e:
@@ -340,17 +383,20 @@ def run_pipeline(
     description: str,
     module: str,
     test_type: str,
+    rag_context: str = "",
+    release: str = "R1",
 ) -> list[dict]:
     """4-agent pipeline: Scout -> Generator -> Reviewer -> Evaluator."""
 
     print(f"\n{'='*60}")
-    print(f"Eutelsat GenAI Pipeline  |  {module}  |  {test_type}")
+    print(f"Eutelsat GenAI Pipeline  |  {module}  |  {test_type}  |  {release}")
     print(f"Feature: {feature_title}")
+    print(f"RAG context: {'YES (' + str(len(rag_context)) + ' chars)' if rag_context else 'none'}")
     print(f"{'='*60}")
 
     # Agent 1: Scout
     print("\n[1/4] Scout Agent - identifying 7 test areas...")
-    areas = scout_agent(feature_title, module, test_type)
+    areas = scout_agent(feature_title, module, test_type, rag_context, release)
     print(f"      {len(areas)} areas identified")
     for i, a in enumerate(areas, 1):
         print(f"        {i}. {a[:70]}")
@@ -360,7 +406,7 @@ def run_pipeline(
     all_raw: list[dict] = []
     for i, area in enumerate(areas, 1):
         print(f"      Area {i}/{len(areas)}: {area[:60]}...")
-        cases = generator_agent(area, feature_title, module, test_type, CASES_PER_AREA)
+        cases = generator_agent(area, feature_title, module, test_type, CASES_PER_AREA, rag_context, release)
         all_raw.extend(cases)
         print(f"             -> {len(cases)} cases")
 

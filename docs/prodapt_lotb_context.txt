@@ -1,0 +1,669 @@
+﻿=== Slide 1 ===
+Presentation on
+Eutelsat's Customer Experience Program (
+CxP
+) â€“ Lot B
+05
+th
+May 2026
+
+=== Slide 2 ===
+This is about Partnership,
+not just Delivery
+
+=== Slide 3 ===
+Eutelsat's
+CxP
+transformation is a
+programme
+that demands a partner, not a vendor.
+Prodapt
+brings the BSS expertise, the hybrid stack credentials, and the commitment to see this through â€” every release, every migration, every milestone. WE are
+in
+...
+Manish Vyas
+MD & CEO,
+Prodapt
+We will
+Meet & Exceed Delivery Objectives
+We commit to delivering three releases on time and all DPs migrated by
+August
+2027. Milestone & Outcome-based with our skin in the game. No disruption to Eutelsat's
+live operations.
+We will do
+Whatever It Takes
+We are deploying our A-Team which includes the team of RFI submission from day one ! Where Eutelsat faces a gap, whether a missing ETL tool, a complex Oracle BRM-to-SAP migration or an uncharted MuleSoft integration,
+Prodapt
+will be there all along
+.
+â€œ
+We will Stay
+Fully Aligned to Eutelsat's Hybrid
+Stack
+Architecture
+& KPIs
+Our solution is built entirely around Eutelsat's defined Hybrid Stack â€” Salesforce, Zuora,
+Celfocus
+OM, Oracle BRM, SAP S4HANA and LEO MuleSoft. We hold ourselves to the SOR's hard. Every design decision traces back to a capability, a release, and a measurable outcome.
+Executive Commitment
+
+=== Slide 4 ===
+AI-FIRST
+in our very core
+Redesigning the company to have enterprise-grade, secure, contextual AI in our foundations.
+Our
+AI platforms
+,
+AI-infused delivery models
+, and
+AI FDE Squads
+enable significant outcomes at Tier 1 scale.
+AI Context Substrate
+(Synapt)  & industry solutions
+AgentHub
+with 300+ purpose-built telco agents
+4 Pillars
+that Prodapt is pivoting around
+STRATEGIC PIVOT
+1
+PLATFORMS
+& IP assets
+Deep investments in building a base toolkit of platforms & products to aid transformation.
+We bring this
+Prodapt-IP base to every enterprise problem statement,
+with a sharp focus on delivering outcomes.
+Synapt platforms
+- Core, Nucleus, AgentCraft
+Synapt toolkit suite
+- 25+ cross-platform solutions
+2
+TELECOM
+industry focus
+Deep commitment to the comms industry with investments in the broader telecom ecosystem.
+SME
+across the value chain, strategic
+telco-first partnerships
+, and leaders with
+Tier 1 pedigree
+.
+10 of the top 20 telcos
+in Americas/EU build with us
+20+ telco accelerators; 50+ deploy-ready use cases
+3
+TALENT
+transformation
+Complete rehaul of talent enablement and AI-readiness - building a pool of AI-native builders.
+Industry-first
+FDE training (AI + telco depth)
+creating vast squads of end-to-end
+outcome-owning
+FDEs.
+Zero Friction
+- Org-wide AI tools & learning access
+Build, not just Certify
+- Hands-on, gamified, at scale
+4
+
+=== Slide 5 ===
+Introductions:
+Prodapt
+Team
+Executive Sponsors
+Rajiv Papneja
+CTO
+Selvakumar B
+Head of Delivery for Europe
+Debabrata Banerjee
+Data Migration Technical Lead
+Pavithra VR
+E2E Test Lead
+Client Partner
+Program Governance, Architecture, Delivery & Test  Leadership
+Mandeep S Kwatra
+Senior Partner Consulting
+Vikram Kumar
+Chief Growth Officer
+Varun Sharma
+Enterprise Architect
+Anuj Garg
+Delivery Director
+Vivek Bali
+Head of Sales Europe
+Roshan Mehaboob
+Head of AI and Data
+Dhanashree Bhat
+CDO
+Ashish Rai
+Solutions Architect
+
+=== Slide 6 ===
+Prodapt as Eutelsat's Strategic partner
+Our Understanding of the Challenges and Requirements
+Solution Architecture and Approach
+LOT B
+: E2E Testing & UAT Support
+Agenda
+
+=== Slide 7 ===
+We are a credible partner...
+
+=== Slide 8 ===
+Tech & Domain Experts across
+Americas, Europe, India, Japan
+5K
+32
+Countries with strategic
+delivery presence
+Successful years in the tech
+transformation business
+25
+80+
+Global enterprise customers
+across industries
+Prodapt
+at a Glance
+8
+ServiceNow invested company
+100% Telco focused Gartner recognized Tech Partner
+World's Leading Telco AI integrator
+
+=== Slide 9 ===
+Gartner recognizes
+Prodapt
+Â as a Large, Telecom-Native services provider in North America, Europe and LATAM
+North America
+Europe
+Latin America
+Prodapt
+has been recognized in Gartner's IT Service Provider Selection Guide for CSP CIOs, a highly influential report designed to help leading global CSPs identify strategic partners
+Telecom-Native
+refers to service providers with
+high
+domain relevance
+&
+specialization
+to deliver end-to-end solutions & services for Communications Service Providers
+
+=== Slide 10 ===
+We know your vision for
+CxP
+...
+...and understand the challenges
+
+=== Slide 11 ===
+Support building a scalable, digital E2E customer journey with a unified stack for LEO & GEO products that drives superior customer experience, high operational efficiencies and faster GTM capabilities for future offerings.
+Eutelsat
+CxP
+Transformation Vision
+
+=== Slide 12 ===
+Eutelsat
+CxP
+2026: Transforming the LEO Customer Experience
+CURRENT OPERATIONAL CHALLENGES
+15-MONTH TRANSFORMATION ROADMAP
+THE TARGET "TO BE" STATE
+Manual Bottlenecks & Delays
+Manual contract entry and bill runs cause significant operational risks and scaling delays.
+Fragmented Digital Interfaces
+Disconnected tools and inconsistent data across Portals and APIs hinder customer self-service.
+Lengthy Time-to-Market
+Inflexible product catalogs lead to duplicated efforts and lost business opportunities.
+Timeline milestones in
+a three-release strategy.
+90%
+AUTOMATION TARGET
+Aiming for 90% automation in key services to reduce provisioning time to under 30 minutes.
+Integrated Hybrid Architectural Stack
+Salesforce
+Zuora
+Oracle
+SAP
+A unified ecosystem leveraging Salesforce, Zuora, Oracle, and SAP for seamless connectivity.
+FULL MIGRATION & HYPERCARE
+Completion: AugustÂ 2027 + 1-month Hypercare
+KEY PERFORMANCE INDICATORS (KPIs)
+ORDERING JOURNEY
+â‰¥ 90%
+AUTOMATION
+for key business service processes.
+PRODUCT CATALOGUE
+< 80%
+REDUCTION
+to extent of 80% for creating or modifying catalogue itemsÂ
+.
+BILLING & INVOICING
+â‰¥ 90%
+BILLING ACCURACY RATE
+across all products.
+API PERFORMANCE
+< 2 sec
+OPTIMISED
+API response times for Portal.
+DP's DATA ACCURACY
+ACCURACY
+in migrating DP's data for 1
+st
+time  .
+â‰¥ 98%
+
+=== Slide 13 ===
+Lot B â€“ Technical Response
+
+=== Slide 14 ===
+Testing Scope â€“ Lot B
+E2E Testing
+Salesforce Portal - Zuora â€“
+Celfocus
+â€“
+Axiros
+â€“ OBRM / SAP â€“ Service Now
+Integration Testing
+Request/Response
+Authentication / Authorization
+Business Logic â€“ Error handling
+Asynchronous Orchestration
+Duplicate Prevention
+Regression / Progression Automation
+>90% Regression Automation
+CI/CD Aligned Execution
+API  level Performance Testing
+API / Integration layer Only
+Ordering, Billing, Provisioning API's
+Peak Throughput & Latency Validation
+Error handling & Recovery Checks
+Out of Scope
+Component Unit Testing, Data Migration Testing
+Security/Pen Testing
+Geo Stack Regression (Only Hybrid Leo stack)
+Legacy stack testing
+In Scope
+E2E Testing
+Integration Testing
+Regression Testing
+Performance Testing
+UAT Governance & Business Testing Support
+UAT Governance & Business Testing Support
+Business define Scenarios
+QA Data & Env Support
+Business Led Execution
+Defect Triage (QA Led)
+Fix Validation & UAT Sign Off
+Testing Scope â€“ Lot B
+
+=== Slide 15 ===
+Test Execution Methodology
+R1 â€“ Foundation Release
+1
+Integration / API Testing
+2
+Core E2E Journey Execution
+3
+Initial Regression Automation
+4
+Release Readiness Validation
+R2 â€“ Migration Ramp Up
+1
+Migration Data Validation
+2
+Integration & API Revalidation
+3
+Progression Automation on Migrated DPs
+4
+Expanded Regression Automation
+R3 â€“ Full Migration & Stabilization
+1
+Full E2E Test Regression (Automated
+2
+Performance Validation (API Level)
+3
+Go Live Readiness & Sign off
+1
+Build Incrementally from R1
+2
+Expanded in R2
+3
+Stabilized & Optimized in R3
+Regression Testing across Releases
+1
+Continues API Validation
+2
+Focus on Data Integrity & Orchestration
+3
+Revalidation after every Major change
+Integration Testing across Releases
+Build Change â€“ API Validation â€“ E2E Regression â€“ Release Decision
+Performance Testing Execution (API Level)
+1
+API Level Performance Only
+2
+Ordering, Billing & Provisioning APIs
+3
+Executed Once per Major Release
+Methodology
+
+=== Slide 16 ===
+Automation Build Progression
+R1 â€“ Foundation & Framework Set up
+R3 â€“ Full Coverage & Stabilization
+Framework Design & Set up
+Complete E2E Regression Coverage
+API Automation for Core flows
+Progression Testing for New Capabilities
+Limited UI Automation (Portal Basics)
+Cutover & Post Migration Validation
+Coverage:
+~30-40% Regression Automated
+Core Happy Paths
+Coverage:
+>90% Regression Automation
+Only Complex Edge Cases Manual
+~ 30% Progression Automated
+R2 â€“ Scale & Migration Support
+Expand Regression Coverage
+Migration Validation Automation
+Billing & Pricing Rule Automation
+Coverage:
+~65-75% Regression Automated
+Migration sanity & Reconciliation Checks
+~ 15% Progression Automated
+R1 â€“ Framework + Core API's
+R2 â€“ Regression + Migration
+R3 - >90% Coverage + Stabilization
+
+=== Slide 17 ===
+Test Layer
+Framework
+Layer
+Utility Layer
+Integration
+Layer
+Web (Selenium)
+Mobile (Appium)
+API (REST-Assured)
+Data Manager
+Config Manager
+Reporter Plugins
+Logger
+Utils
+Common Helpers
+Jenkins CI/CD
+Allure Reports
+Device Farm
+Framework Benefits for Eutelsat
+Our Global Automation Framework (GAF)
+End-to-End Test Automation
+Comprehensive Reporting:
+Allure reports with screenshots, videos, logs
+Parallel Execution:
+Run 50+ tests simultaneously on device farm
+Self-Healing Scripts:
+AI-powered auto-fix for broken locators (80% success rate)
+CI/CD Integration:
+Jenkins pipeline with automatic execution on code commits
+Multi-Channel Support:
+Web, Mobile (iOS/Android), API, USSD - single framework
+70%+ Automation Coverage:
+Reduce regression cycle from 5 days to 8 hours
+Reusable Components:
+60% code reusability across projects
+Service Scope
+GAF ROI for Eutelsat
+5 days â†’ 8 hours
+Regression cycle
+60% cost â†“
+vs manual testing
+3x faster
+Release velocity
+
+=== Slide 18 ===
+Chatbots for requirement gathering
+Automated requirement generation & validation
+Predictive analytics for test estimation
+Risk assessment & prioritization
+BRD/User story generation
+Automated test case generation
+(Manual & Automation)
+Intelligent test design with predictive analytics
+Smart test execution scheduling
+Test data generation for compliance
+Predictive analytics for test outcomes
+Requirements & Planning
+Test Design & Execution
+Defect & Closure
+Automated defect classification
+Predictive analytics for defect trends
+NLP for defect analysis
+Automated defect reporting
+Sentiment analysis on feedback
+AI-Powered Testing Across STLC Phases
+Aqua Suite & Synapt.ai Platform - Reducing costs and accelerating time-to-market
+BUSINESS IMPACT: 60% faster test creation | 40% cost reduction | 3x test coverage improvement
+AI Use Cases
+
+=== Slide 19 ===
+KPIs & Operational Metrics
+KPIs
+Target
+Measurement
+Test Coverage
+100%
+Requirements mapped to Test cases
+Defect Leakage Rate
+<2%
+(Defects identified in UAT / Production Ã· Total defects identified) Ã— 100
+Defect Detection Efficiency
+>96%
+(Defects detected during testing Ã· Total defects detected including production) Ã— 100
+Operational Metrics
+Target
+Measurement
+Test Execution Rate (Manual)
+>95% per Sprint / Release
+Number of manual test cases executed /number of manual test cases planned for the cycle *100
+% of Automation test cases Executed in each Cycle
+>95% Per Cycle
+Number of Automated Test cases executed in the cycle /Total Automated test cases planned for the Cycle *100
+Defect Aging
+<5 days
+Average number of days taken to close defects from the date of logging
+Regression Automation Coverage
+>90%
+Automated regression test cases Ã· Total regression test cases (Towards R3 Release)
+KPI's will be used for Overall Program Governance with a focus on Outcomes
+Operational Metrics will be used to measure day-to-day Performance and monitor ongoing Operations
+*
+All KPIs listed above are indicative and will be firmed up during the discovery
+
+=== Slide 20 ===
+Why
+Prodapt
+?
+
+=== Slide 21 ===
+Executive Summary
+Enabling Predictable Outcomes through Unified Accountability
+Awarding both Lot A (Transformation) and Lot B E2E Testing) to
+Prodapt
+provides Eutelsat with a
+single Accountable Delivery Model
+that improves Release Predictability, Reduces Integration Complexity and
+strengthens End to end Quality Outcomes
+â€“ while still preserving I
+ndependent QA Governance
+through Structural, Process and Tooling Separation.
+Faster & more Predictable R1 / R2/ R3 Releases
+Lower Defect Leakage and Billing Risk
+Reduced Cross Dependency Overhead  across a highly Integrated BSS Landscape
+One Accountable Partner for Outcomes, not hand-offs
+KEY OUTCOMES FOR EUTELSAT
+Why a Unified Delivery Model improved End to end Predictability for this Program
+The CxP is Program is
+Multi Application (Portal, CPQ, Order Management, Billing, API's)
+Highly Integrated (Hybrid Leo / Geo stack
+Release-driven (3 Major Releases + Migration)
+Time-boxed (15 months with Zero disruption mandate)
+Distributed Ownership of E2E Defect Resolution
+Additional Coordination Cycles across Delivery partners
+Variations in Interpretation of End-to-end Business Journeys
+Extended-Release Timelines driven by Cross vendor hand offs rather than Solution readiness
+Splitting Lot A and Lot B introduces
+
+=== Slide 22 ===
+âœ“
+Strong Telecom & Network Testing Experience:
+Deep Expertise in MPLS, Network Inventory and OSS/BSS systems
+Proven capability in handling Complex device level and topology-based testing
+âœ“
+Scalable Execution Approach:
+Ability to
+Ramp up / down during peak phases
+Flexible resourcing aligned to
+Project life cycle (design - > execution -> stabilization)
+âœ“
+End-to-end Testing Ownership:
+Covers Functional, Integration (E2E), Regression and UAT Support
+Strong Governance with
+Clear Ownership and accountability across Phases
+âœ“
+Automation First Strategy
+Focus on
+Test Automation & CR/CD Pipeline Integration
+Enables
+Faster Regression Cycles and Improved Release Confidence
+âœ“
+Proven Governance and Stakeholder Management
+Dedicated
+Project Manager + Technical leads
+ensuring structured Delivery
+Transparent Reporting, Risk Tracking and
+Proactive Escalation Management
+âœ“
+Handling Complex Dependencies
+Experience working with
+Multi Vendor Environments
+Effective Co-ordination for
+External System dependencies and data readiness
+The Safe Pair of Hands
+for Eutelsat with One Single Ownership
+Our Expertise
+Why
+Prodapt
+?
+
+=== Slide 23 ===
+Single Accountability for Outcomes (What Eutelsat Ultimately Gets)
+KEY OUTCOMES FOR EUTELSAT
+Predictable On time Releases across R1, R2 & R3
+E2E Validated Quality with minimal Production Leakage
+Stable Migration with Assured Data & Billing accuracy from day 1
+No Contractual Grey Zones
+Clear Ownership of E2E Quality, Defects and Go live Readiness
+Faster Issue Resolution without Cross Vendor hand-off's or blame loops
+With Prodapt Owning Lot A & Lot B â€“ One Partner accountable for
+This Aligns Perfectly with Eutelsat's Outcome based, Fixed price Model with One Single Ownership
+
+=== Slide 24 ===
+How QA Remains Truly Independent
+Organizational Independence
+Separate QA Reporting Line
+Dedicated Test & Defect Manager
+Independent Sign off Authority for Release Readiness
+Tooling & Transparency
+Single Jira Instance with
+QA Owned Workflows
+Defect aging & leakage Dashboards
+Full Visibility to Eutelsat Stakeholders
+Process Dependence
+QA Owned:
+Test Strategy
+Entry/Exit Criteria
+Defect Severity Classicization
+Go-live Recommendation
+Governance Forums
+Independent QA Dashboard reviewed in
+Release Readiness Reviews
+Steering Committee Meetings
+Testing Governance + Integrated Delivery
+This ensures QA challenges Delivery Risk Early â€“ even within the same Partner
+Prodapt
+Proposes Structural and Independent Governance
+
+=== Slide 25 ===
+Advantages of Integrated Dev + Test Model
+KEY OUTCOMES FOR EUTELSAT
+Requirements & Design Phase
+Test Planning & Execution Strategy
+Test Execution & Defect Management
+Release Readiness & Go Live
+Requirement & Design Phase (Shift Left Quality)
+With same Partner:
+QA Embedded from User Story Creation
+Testability & Acceptance criteria defined Output
+E2E Journey Coverage built during Design, not after build.
+Data Point:
+>25% Reduction in downstream Defects
+Earlier Detection of Billing, Migration and Integration gaps
+Test Execution & Defect Management:
+With Same Partner:
+Single Defect Lifecycle Ownership
+Faster Root cause analysis (No Cross vendor blame loop)
+Dev and QA share
+One E2E View of the Journey
+Data Point:
+25-35% Faster Defect Closure
+Higher Defect Detection Efficiency (>96%)
+Lower Defect aging (<5 days)
+Test Planning & Environment Strategy
+Integrated Model Enables:
+Single Aligned Test Strategy across Component, Integration, E2E, UAT
+Environment Planning aligned to Release waves (R1/R2/R3)
+Realistic Test data Planning for Migration & Billing Scenarios.
+Data Point:
+30-40% reduction in Environment Idle time
+Fewer Test Cycle restarts due to Environment Misalignment
+Release Readiness & Go Live (R1/R2/R3)
+Integrated Accountability enables:
+One Go live Readiness View
+Clear â€œRelease Confidence Indexâ€
+No Ambiguity on Release Blockers
+Data Points:
+>95% On time Test Cycle adherence
+Predictable Go live decisions without escalation Overhead.
+*Data points based on our Experience in similar Engagements
+
+=== Slide 26 ===
+Provision of budget for Eutelsat recommended SMEs to help knowledge retention for key systems, specific details to be covered in the commercial proposal
+3rd Party / Partner Management will be an important element of Program Governance, and all major partners will be embedded in the Program Governance to align to the
+CxP
+vision
+Tried & tested staffing plan & structure for E2E testing & program delivery
+
+=== Slide 27 ===
+R1/R2/R3 View â€“ Why Single Vendor matters more Over time
+Release 1 â€“ New DP Onboarding
+Release 3 â€“ Ful Migration
+Primary Focus:
+Complete and Consistent end to end Business flows
+Primary Focus:
+Scale readiness, Regression stability, Production reliability
+Integrated Benefit
+â€“ Faster Stabilization, Early Business Confidence
+Integrated Benefit:
+High Automation, Stable Regression, predictable Cutover
+Release 2 â€“ Partial Migration
+Primary Focus:
+Data Integrity and Billing Correctness across Legacy and new Stack
+Integrated Benefit:
+Faster Defect isolation and reduced reconciliation effort
+The Value of Integrated QA Compounds with Every Release
+
+=== Slide 28 ===
+One Partner â€“ One Accountability â€“ Predictable Outcomes across R1 â€“ R3
+KEY OUTCOMES FOR EUTELSAT
+For a Highly Integrated BSS Transformation with aggressive timelines and Zero Disruption expectations, separating Development and Testing increases Delivery Risk.
+Awarding both Lot A and Lot B to Prodapt enables Eutelsat to achieve faster Releases, Higher Quality and Strong Accountability â€“ While maintaining Independent QA Governance through Clear Organizational, Process and Tooling Separation.
+
+=== Slide 29 ===
+Thank You
+
