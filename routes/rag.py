@@ -12,11 +12,23 @@ router = APIRouter()
 _ingest_status = {"running": False, "last": None}
 
 
+def _make_client():
+    """Create a fresh OpenAI client for use in background threads."""
+    import os, httpx
+    from openai import OpenAI
+    return OpenAI(
+        base_url="https://integrate.api.nvidia.com/v1",
+        api_key=os.getenv("NVIDIA_API_KEY"),
+        http_client=httpx.Client(verify=False),
+    )
+
+
 def _run_ingest_bg(force: bool):
     _ingest_status["running"] = True
     db = SessionLocal()
+    bg_client = _make_client()
     try:
-        result = rag_ingest.ingest(db, client, force=force)
+        result = rag_ingest.ingest(db, bg_client, force=force)
         _ingest_status["last"] = result
         print(f"[RAG] Ingest complete: {result}")
     except Exception as e:
