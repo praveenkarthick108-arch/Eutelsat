@@ -1079,9 +1079,23 @@ function updateRagBadge() {
   if (!el) return;
   if (S.rag.ready) {
     el.innerHTML = `<span style="color:#22c55e">&#9679;</span> RAG Active &middot; ${S.rag.chunks} chunks`;
+  } else if (S.rag.ingest_running) {
+    el.innerHTML = `<span style="color:#f59e0b">&#9679;</span> RAG Indexing&hellip;`;
   } else {
     el.innerHTML = `v2.0 &middot; Powered by NVIDIA NIM`;
   }
+}
+
+async function pollRag() {
+  try {
+    const s = await api('GET','/api/rag/status');
+    const wasReady = S.rag.ready;
+    S.rag = s;
+    updateRagBadge();
+    if (s.ingest_running || (!s.ready && !wasReady)) {
+      setTimeout(pollRag, 8000);
+    }
+  } catch {}
 }
 
 async function init() {
@@ -1090,6 +1104,7 @@ async function init() {
   try { S.rag=await api('GET','/api/rag/status'); } catch{}
   render();
   updateRagBadge();
+  if (!S.rag.ready) setTimeout(pollRag, 8000);
 }
 init();
 </script>
