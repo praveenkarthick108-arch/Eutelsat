@@ -1,5 +1,11 @@
+import sys
 import threading
 from contextlib import asynccontextmanager
+
+# Windows consoles default to cp1252 which can't encode LLM Unicode output
+if sys.platform == "win32":
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
@@ -11,14 +17,15 @@ from routes import generate, sessions, testcases, export, scope
 from routes import followup, jira as jira_routes
 from routes import rag as rag_routes
 from rag import ingest as rag_ingest
-from ai_pipeline import client
+from ai_pipeline import _make_client
 
 
 def _background_ingest():
-    """Run RAG ingest in a background thread so startup is non-blocking."""
+    """Run RAG ingest in a background thread — uses its own client (httpx not thread-safe)."""
     db = SessionLocal()
+    bg_client = _make_client()
     try:
-        result = rag_ingest.ingest(db, client, force=False)
+        result = rag_ingest.ingest(db, bg_client, force=False)
         status = result.get("status")
         if status == "ingested":
             print(f"[RAG] Ingested {result['chunks']} chunks from {result['source']}")
@@ -41,6 +48,12 @@ async def lifespan(app: FastAPI):
         "ALTER TABLE test_cases ADD COLUMN confidence_score REAL DEFAULT 0.85",
         "ALTER TABLE test_cases ADD COLUMN hallucination_risk TEXT DEFAULT 'Low'",
         "ALTER TABLE sessions ADD COLUMN from_cache INTEGER DEFAULT 0",
+        # Feature set: automation tagging, out-of-scope, chain mode, release
+        "ALTER TABLE test_cases ADD COLUMN automation_candidate INTEGER DEFAULT 0",
+        "ALTER TABLE test_cases ADD COLUMN automation_notes TEXT DEFAULT ''",
+        "ALTER TABLE sessions ADD COLUMN release TEXT DEFAULT 'R1'",
+        "ALTER TABLE sessions ADD COLUMN chain_mode INTEGER DEFAULT 0",
+        "ALTER TABLE sessions ADD COLUMN out_of_scope_warning TEXT DEFAULT ''",
     ]
     with engine.connect() as conn:
         for sql in migrations:
@@ -51,11 +64,7 @@ async def lifespan(app: FastAPI):
                 pass
 
     print("Database ready")
-
-    # Kick off RAG ingest in the background — server starts immediately
-    t = threading.Thread(target=_background_ingest, daemon=True)
-    t.start()
-    print("[RAG] Background ingest started...")
+    print("[RAG] Use the RAG panel to index documents when no generation is running.")
 
     yield
 

@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, event
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
@@ -10,10 +10,15 @@ engine = create_engine(
     pool_pre_ping=True,
 )
 
-# Enable WAL mode for concurrent read+write access (background ingest + API)
-with engine.connect() as _conn:
-    _conn.execute(__import__("sqlalchemy").text("PRAGMA journal_mode=WAL"))
-    _conn.execute(__import__("sqlalchemy").text("PRAGMA busy_timeout=30000"))
+
+@event.listens_for(engine, "connect")
+def _set_sqlite_pragmas(dbapi_conn, _record):
+    """Apply WAL mode and busy_timeout on every new connection from the pool."""
+    cur = dbapi_conn.cursor()
+    cur.execute("PRAGMA journal_mode=WAL")
+    cur.execute("PRAGMA busy_timeout=30000")
+    cur.close()
+
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()

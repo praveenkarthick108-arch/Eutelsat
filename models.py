@@ -13,10 +13,13 @@ class GenerationSession(Base):
     module = Column(String(200), nullable=False)
     system = Column(String(200), default="")
     test_type = Column(String(100), nullable=False)
+    release = Column(String(10), default="R1")
     tc_count = Column(Integer, default=0)
     rel_count = Column(Integer, default=0)
     tester_name = Column(String(200), default="Anonymous")
     from_cache = Column(Boolean, default=False)
+    chain_mode = Column(Boolean, default=False)
+    out_of_scope_warning = Column(String(500), default="")
     created_at = Column(DateTime, default=datetime.utcnow)
 
     test_cases = relationship(
@@ -41,6 +44,8 @@ class TestCase(Base):
     is_edited = Column(Boolean, default=False)
     confidence_score = Column(Float, default=0.85)
     hallucination_risk = Column(String(20), default="Low")
+    automation_candidate = Column(Boolean, default=False)
+    automation_notes = Column(String(300), default="")
 
     session = relationship("GenerationSession", back_populates="test_cases")
 
@@ -77,5 +82,5 @@ class DocumentChunk(Base):
     source = Column(String(200), nullable=False, index=True)
     chunk_index = Column(Integer, nullable=False)
     text = Column(Text, nullable=False)
-    embedding = Column(Text, default="[]")  # JSON float array
+    embedding = Column(Text, default="[]")
     created_at = Column(DateTime, default=datetime.utcnow)

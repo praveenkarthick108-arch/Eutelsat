@@ -4,13 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Eutelsat GenAI — Test Case Generator</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
 :root{
   --sb:#0B1929;--sb2:#162A40;--sb3:#1D3A57;--sbact:#4F8EF7;
   --sbtxt:#94A3B8;--sbtxt2:#CBD5E1;
   --bg:#EEF2F7;--card:#fff;--border:#E2E8F0;
   --blue:#3B82F6;--blue2:#2563EB;--purple:#8B5CF6;
-  --green:#10B981;--amber:#F59E0B;--red:#EF4444;
+  --green:#10B981;--amber:#F59E0B;--red:#EF4444;--teal:#06B6D4;--pink:#EC4899;
   --txt:#1E293B;--txt2:#64748B;--txt3:#94A3B8;
   --sh:0 1px 4px rgba(0,0,0,.08);--sh2:0 4px 16px rgba(0,0,0,.1);--sh3:0 8px 32px rgba(0,0,0,.16);
   --r:10px;--r2:16px;--sbw:264px;
@@ -49,6 +50,7 @@ input,select,textarea{font-family:inherit;outline:none}
 .sb-badge.reg{background:rgba(245,158,11,.25);color:#FCD34D}
 .sb-badge.smoke{background:rgba(239,68,68,.25);color:#FCA5A5}
 .sb-badge.san{background:rgba(99,102,241,.25);color:#A5B4FC}
+.sb-badge.multi{background:rgba(6,182,212,.25);color:#67E8F9}
 .sb-badge.def{background:rgba(148,163,184,.15);color:#94A3B8}
 .sb-footer{padding:12px 14px;border-top:1px solid rgba(255,255,255,.06)}
 .sb-footer-lnk{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:8px;color:var(--sbtxt);font-size:12px;cursor:pointer;transition:all .15s}
@@ -73,6 +75,7 @@ input,select,textarea{font-family:inherit;outline:none}
 .stat-card.red::before{background:linear-gradient(90deg,#EF4444,#F87171)}
 .stat-card.green::before{background:linear-gradient(90deg,#10B981,#34D399)}
 .stat-card.purple::before{background:linear-gradient(90deg,#8B5CF6,#A78BFA)}
+.stat-card.teal::before{background:linear-gradient(90deg,#06B6D4,#22D3EE)}
 .stat-lbl{font-size:11px;font-weight:700;color:var(--txt3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:7px}
 .stat-val{font-size:28px;font-weight:800;color:var(--txt);line-height:1}
 .stat-sub{font-size:12px;color:var(--txt2);margin-top:5px}
@@ -100,9 +103,10 @@ textarea.finput{resize:vertical;min-height:72px}
 
 /* ── Loading ── */
 .loading-wrap{padding:36px 20px;text-align:center}
-.loading-bar-track{width:100%;height:6px;background:var(--border);border-radius:99px;overflow:hidden;margin:14px 0 6px}
-.loading-bar-fill{height:100%;background:linear-gradient(90deg,#3B82F6,#8B5CF6);border-radius:99px;transition:width .5s ease}
-.stage-list{margin:14px auto;max-width:420px;text-align:left}
+.loading-bar-track{width:100%;height:8px;background:var(--border);border-radius:99px;overflow:hidden;margin:14px 0 6px}
+.loading-bar-fill{height:100%;width:100%;background:linear-gradient(90deg,#3B82F6 0%,#8B5CF6 40%,#06B6D4 60%,#3B82F6 100%);background-size:200% 100%;border-radius:99px;animation:shimmer 2s linear infinite}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.stage-list{margin:14px auto;max-width:460px;text-align:left}
 .stage-row{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border)}
 .stage-row:last-child{border:none}
 .stage-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
@@ -118,11 +122,26 @@ textarea.finput{resize:vertical;min-height:72px}
 .spinner{display:inline-block;width:16px;height:16px;border:2.5px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite}
 
 /* ── Tabs ── */
-.tab-bar{display:flex;gap:4px;padding:14px 20px 0;border-bottom:1px solid var(--border)}
-.tab-btn{padding:9px 16px;border-radius:8px 8px 0 0;font-size:13px;font-weight:600;color:var(--txt2);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;position:relative;bottom:-1px}
+.tab-bar{display:flex;gap:2px;padding:14px 20px 0;border-bottom:1px solid var(--border);overflow-x:auto;flex-shrink:0}
+.tab-bar::-webkit-scrollbar{height:3px}
+.tab-btn{padding:9px 14px;border-radius:8px 8px 0 0;font-size:12px;font-weight:600;color:var(--txt2);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;position:relative;bottom:-1px;white-space:nowrap}
 .tab-btn:hover{color:var(--txt);background:var(--bg)}
 .tab-btn.active{color:var(--blue);border-bottom-color:var(--blue);background:#fff}
-.tab-count{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;background:var(--blue);color:#fff;border-radius:99px;font-size:10px;font-weight:700;margin-left:5px;padding:0 4px}
+.tab-btn.active.t-func{color:#3B82F6;border-bottom-color:#3B82F6}
+.tab-btn.active.t-intg{color:#8B5CF6;border-bottom-color:#8B5CF6}
+.tab-btn.active.t-regr{color:#F59E0B;border-bottom-color:#F59E0B}
+.tab-btn.active.t-uat{color:#10B981;border-bottom-color:#10B981}
+.tab-btn.active.t-e2e{color:#06B6D4;border-bottom-color:#06B6D4}
+.tab-count{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;background:currentColor;opacity:.85;color:#fff;border-radius:99px;font-size:10px;font-weight:700;margin-left:5px;padding:0 4px}
+.tab-count-n{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;background:var(--blue);color:#fff;border-radius:99px;font-size:10px;font-weight:700;margin-left:5px;padding:0 4px}
+
+/* ── Type color pills ── */
+.type-pill{display:inline-flex;align-items:center;padding:2px 8px;border-radius:99px;font-size:10px;font-weight:700;white-space:nowrap}
+.type-pill.Functional{background:#EFF6FF;color:#2563EB}
+.type-pill.Integration,.type-pill.API\/Integration{background:#F5F3FF;color:#7C3AED}
+.type-pill.Regression{background:#FFFBEB;color:#D97706}
+.type-pill.UAT{background:#ECFDF5;color:#059669}
+.type-pill.End-to-End,.type-pill.E2E{background:#ECFEFF;color:#0891B2}
 
 /* ── Priority & badges ── */
 .pri-summary{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center}
@@ -152,7 +171,7 @@ textarea.finput{resize:vertical;min-height:72px}
 .tc-table tbody tr:hover td{background:#F8FAFC}
 .tc-table tbody tr.exp td{background:#F8FAFC}
 .tc-id{font-family:monospace;font-size:12px;font-weight:700;color:var(--txt3)}
-.tc-desc-short{max-width:320px;color:var(--txt);cursor:pointer;line-height:1.5}
+.tc-desc-short{max-width:300px;color:var(--txt);cursor:pointer;line-height:1.5}
 .tc-desc-short:hover{color:var(--blue)}
 .conf-wrap{width:76px}
 .conf-bar{height:5px;background:var(--border);border-radius:99px;overflow:hidden;margin-bottom:2px}
@@ -261,6 +280,19 @@ textarea.finput{resize:vertical;min-height:72px}
 .mbtn-green{padding:8px 20px;background:var(--green);color:#fff;border-radius:8px;font-size:13px;font-weight:700;transition:opacity .15s}
 .mbtn-green:hover{opacity:.85}
 
+/* ── Dashboard ── */
+.dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px}
+.dash-chart-card{background:var(--card);border-radius:var(--r2);border:1px solid var(--border);box-shadow:var(--sh);padding:20px}
+.dash-chart-title{font-size:13px;font-weight:700;color:var(--txt);margin-bottom:16px;display:flex;align-items:center;gap:7px}
+.dash-chart-wrap{position:relative;height:240px}
+.dash-kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:20px}
+.kpi-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;box-shadow:var(--sh)}
+.kpi-label{font-size:11px;font-weight:700;color:var(--txt3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.kpi-target{font-size:20px;font-weight:800;color:var(--purple)}
+.kpi-icon{font-size:22px;margin-bottom:4px}
+.dash-recent{background:var(--card);border-radius:var(--r2);border:1px solid var(--border);box-shadow:var(--sh);overflow:hidden}
+.dash-recent-head{padding:14px 20px;border-bottom:1px solid var(--border);font-size:13px;font-weight:700;color:var(--txt)}
+
 /* ── Empty / Error ── */
 .empty{padding:56px 20px;text-align:center}
 .empty-ico{font-size:48px;margin-bottom:14px;opacity:.45}
@@ -271,6 +303,33 @@ textarea.finput{resize:vertical;min-height:72px}
 @keyframes fadein{from{opacity:0}to{opacity:1}}
 @keyframes slidein{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 .anim{animation:slidein .3s ease}
+
+/* ── Scope Browser ── */
+.scope-prog-card{background:var(--card);border-radius:var(--r2);border:1px solid var(--border);padding:16px 20px;margin-bottom:18px;box-shadow:var(--sh)}
+.scope-cov-row{display:flex;align-items:center;gap:20px;margin-bottom:10px}
+.scope-cov-num{font-size:26px;font-weight:800;color:var(--txt);line-height:1}
+.scope-cov-sub{font-size:12px;color:var(--txt2);margin-top:2px}
+.scope-track{flex:1;height:10px;background:var(--border);border-radius:99px;overflow:hidden}
+.scope-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,#10B981,#34D399);transition:width .5s ease}
+.scope-cov-pct{font-size:18px;font-weight:800;color:var(--green)}
+.scope-cols{display:flex;flex-direction:column;gap:14px}
+.scope-col-section{background:var(--card);border-radius:var(--r2);border:1px solid var(--border);box-shadow:var(--sh);overflow:hidden}
+.scope-col-hdr{padding:12px 16px;display:flex;align-items:center;gap:11px;border-bottom:1px solid var(--border);border-left:4px solid}
+.scope-col-badge{width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;flex-shrink:0;color:#fff}
+.scope-col-name{font-size:13px;font-weight:700;color:var(--txt);flex:1}
+.scope-col-sys{font-size:11px;color:var(--txt3)}
+.scope-col-cnt{font-size:11px;font-weight:700;padding:3px 9px;border-radius:99px;background:var(--bg)}
+.scope-items-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(285px,1fr));gap:1px;background:var(--border)}
+.scope-item{background:var(--card);padding:13px 16px;cursor:pointer;transition:background .12s;position:relative;min-height:82px}
+.scope-item:hover{background:#F0F7FF}
+.scope-item.done{background:#F0FDF4}
+.scope-item.done:hover{background:#DCFCE7}
+.scope-item-title{font-size:12.5px;font-weight:600;color:var(--txt);line-height:1.4;margin-bottom:4px;padding-right:22px}
+.scope-item-desc{font-size:11px;color:var(--txt3);line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.scope-item-tick{position:absolute;top:12px;right:12px;width:17px;height:17px;background:var(--green);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:9px;font-weight:700}
+.scope-item-risk{display:inline-flex;align-items:center;gap:3px;margin-top:5px;padding:2px 7px;border-radius:99px;font-size:10px;font-weight:700;background:#FEF2F2;color:#DC2626}
+.scope-item-cta{position:absolute;bottom:9px;right:13px;font-size:10px;font-weight:700;color:var(--blue);opacity:0;transition:opacity .12s}
+.scope-item:hover .scope-item-cta{opacity:1}
 </style>
 </head>
 <body>
@@ -296,6 +355,15 @@ textarea.finput{resize:vertical;min-height:72px}
       <div class="sb-nav-item" id="nav-generate" onclick="setView('generate')">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
         Generate
+      </div>
+      <div class="sb-nav-item" id="nav-dashboard" onclick="setView('dashboard')">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+        Dashboard
+      </div>
+      <div class="sb-nav-item" id="nav-scope" onclick="setView('scope')">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-9 14l-5-5 1.41-1.41L10 14.17l7.59-7.59L21 8l-9 9z"/></svg>
+        Scope Browser
+        <span id="scope-nav-badge" style="margin-left:auto;font-size:10px;font-weight:700;background:rgba(59,130,246,.2);color:#93C5FD;padding:2px 6px;border-radius:99px;display:none"></span>
       </div>
       <div class="sb-nav-item" id="nav-history" onclick="setView('history')">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
@@ -340,32 +408,90 @@ textarea.finput{resize:vertical;min-height:72px}
 const S = {
   sessions: [], current: null, view: 'generate',
   loading: false, progress: 0, error: null,
-  tab: 'testcases', expandedId: null, editingId: null, editData: {},
+  tab: 'overview', expandedId: null, editingId: null, editData: {},
   tcPage: 0, tcSearch: '',
   jiraOpen: false, jiraTab: 'config', importResult: null,
   chatMsgs: [], chatLoading: false, newCasesAdded: 0,
   jiraCfg: { jira_url:'', project_key:'', user_email:'', api_token:'' },
   rag: { ready: false, chunks: 0, source: null },
   release: 'R1',
+  chainMode: false,
+  formTitle: '', formDesc: '', formTester: '',
+  loadingStart: null,
+  oosWarning: '',
+  dashStats: null,
+  dashLoading: false,
 };
 let progressTimer = null;
+let chartInstances = {};
 const PAGE = 20;
-const MODULES = [
-  'Customer Portal','Contracts / CIM','CPQ / EPC','Order Management',
-  'Provisioning / Activation','Billing / Charging','Inv. & Accounting',
-  'API / Integration','ServiceNow / ITSM'
-];
-const TYPES = [
-  'Functional','API/Integration','End-to-End (E2E)','Regression',
-  'Performance (API Level)','UAT','Migration Data Validation','Smoke','Sanity'
-];
+
 const RELEASES = [
   {val:'R1', label:'R1 – Foundation Release', desc:'New DP onboarding, core E2E journeys, initial regression'},
   {val:'R2', label:'R2 – Migration Ramp Up',  desc:'Migration data validation, billing correctness, progression automation'},
   {val:'R3', label:'R3 – Full Migration',      desc:'Full E2E regression, performance validation, go-live readiness'},
 ];
-const SUGGESTS = ['Add more edge cases for failure scenarios','Generate negative test cases',
-  'Add performance-focused test cases','Explain TC-001 in more detail','What test cases cover Zuora integration?'];
+const SUGGESTS = [
+  'Add more edge cases for failure scenarios','Generate negative test cases',
+  'Add performance-focused test cases','Explain the first test case in detail',
+  'What test cases cover Zuora integration?'
+];
+const TYPE_COLORS = {
+  'Functional':'#3B82F6','API/Integration':'#8B5CF6','Regression':'#F59E0B',
+  'UAT':'#10B981','End-to-End (E2E)':'#06B6D4',
+};
+const TYPE_ORDER = ['Functional','API/Integration','Regression','UAT','End-to-End (E2E)'];
+
+// ─── Scope Browser Data ───────────────────────────────────────────────────────
+const SCOPE_COLS = [
+  {col:'A', name:'Customer Portal',       system:'GEO Community Cloud',          color:'#3B82F6'},
+  {col:'B', name:'Contracts / CIM',       system:'GCRM Salesforce',              color:'#8B5CF6'},
+  {col:'C', name:'CPQ / EPC',             system:'Zuora',                         color:'#F59E0B'},
+  {col:'D', name:'Order Management',      system:'GEO Salesforce + Celfocus OM',  color:'#22C55E'},
+  {col:'E', name:'Billing / Charging',    system:'Zuora + Oracle O-BRM',          color:'#FB923C'},
+  {col:'F', name:'Invoicing & Accounting',system:'SAP S/4HANA',                  color:'#22D3EE'},
+  {col:'G', name:'API / Integration',     system:'MuleSoft LEO (8 flows)',        color:'#F472B6'},
+];
+const SCOPE_DATA = [
+  {id:'A1',col:'A',title:'Portal — Customer 360 Degree View',desc:'DP logs into GEO Community Cloud and sees a unified dashboard: active services, contracts, orders, and invoices in one screen. Test completeness and accuracy of the aggregated data from all backend systems.'},
+  {id:'A2',col:'A',title:'LEO Order Journey for Packages and Sub Pools',desc:'DP places an order for LEO satellite packages and Sub Pools via the portal. Sub Pools distribute a parent data allowance to sub-accounts. Test the full order flow from product selection to order confirmation.'},
+  {id:'A3',col:'A',title:'Portal — DP Sub-DB User Access Management',desc:'Multiple users with different roles (finance, operations, technical) access the same DP portal account. Test role-based access controls — read-only users cannot place orders, admin users can manage everything.'},
+  {id:'A4',col:'A',title:'Streamlined Order Journey — Infrastructure Capacity Check',desc:'When a DP places an order, the portal validates satellite infrastructure capacity (network slots, beam availability) before confirming. Test capacity validation logic and rejection when capacity is unavailable.'},
+  {id:'A5',col:'A',title:'Portal — Customer Inventory Management',desc:'DP views all their active terminals, services, and equipment in real-time. Test inventory data accuracy and synchronization with provisioning systems after activations, changes, and terminations.'},
+  {id:'B1',col:'B',title:'Standard LEO Product Structure Setup in GCRM',desc:'LEO product hierarchy, attributes, and pricing tiers configured in GCRM Salesforce before the product can be sold. Test product visibility, attribute completeness, and association with contract templates.'},
+  {id:'B2',col:'B',title:'Standard Contract Model Setup',desc:'Standard LEO contract template: payment terms, billing cycle, contract duration, SLAs, and support tiers. Verify contract creation with all mandatory fields correctly defaulted and customizable per DP.'},
+  {id:'B3',col:'B',title:'Standard DP Specific Options Setup at Contract Level',desc:'DP-specific pricing discounts, billing currency, and service tiers captured at contract level. Test that custom DP terms override standard defaults and are isolated — changes for one DP do not affect others.'},
+  {id:'B4',col:'B',title:'Standard Contract Rules Execution Model',desc:'When a contract is activated, downstream systems must automatically update: products become orderable, billing start dates are set. Verify all automated rule triggers fire correctly on contract activation.'},
+  {id:'B5',col:'B',title:'Standard Contract Management Rules',desc:'Contract amendment, renewal, and termination lifecycle rules. Test mid-term product additions, plan upgrades, and that billing correctly reflects contract changes from the amendment effective date.'},
+  {id:'C1',col:'C',title:'Baseline Product Catalogue — Core Products Setup',desc:'Core LEO connectivity products (standard plans, IP VPN, access services) created in Zuora with correct product codes, attributes, and specifications. Verify products appear in quotes and are orderable.'},
+  {id:'C2',col:'C',title:'Baseline Product Pricing Structure Setup',desc:'MRC (Monthly Recurring Charge), one-off activation fees, and usage-based charges configured in Zuora. Test that quotes reflect correct pricing across new orders, renewals, and mid-cycle plan changes.'},
+  {id:'C3',col:'C',title:'Network Slice Model Setup in Zuora',desc:'Network Slice product gives a DP dedicated satellite capacity. Test the creation, pricing configuration, and provisioning integration for Network Slice products — separate from standard shared-capacity plans.'},
+  {id:'C4',col:'C',title:'Baseline Product Catalogue — Options and Add-Ons',desc:'Add-on products: data top-ups, bolt-ons, pool upgrades, extra bandwidth. Verify add-ons can be attached to existing subscriptions, are correctly priced, and appear on the next billing cycle invoice.'},
+  {id:'C5',col:'C',title:'DP-Specific Product Catalogue Configuration',desc:'Private catalogues limiting which products specific DPs can see and order. Test that restricted products (e.g. Network Slice) are hidden from unauthorized DPs and visible only to entitled ones.'},
+  {id:'C6',col:'C',title:'Baseline Product Management and Visibility Rules',desc:'Product lifecycle management in Zuora: publication, retirement, and visibility per DP. Test visibility rules for active vs. discontinued products and that retired products no longer appear for new orders.'},
+  {id:'D1',col:'D',title:'LEO Partner Service Setup for Ordering',desc:'Initial setup linking LEO services to a DP contract so they can place orders. Test that partner service configuration is complete and the DP can see and select available services in the order management system.'},
+  {id:'D2',col:'D',title:'Streamlined Order Journey — General Happy Path',desc:'DP places a new order in GEO Salesforce, it goes through approval, is sent to Celfocus OM for orchestration, and is provisioned end-to-end without manual intervention. The core order scenario all others depend on.'},
+  {id:'D3',col:'D',title:'Streamlined Order Journey — Service Activation',desc:'After an order is placed, the satellite service must be activated. Verify activation triggers fire correctly, the DP receives a confirmation, and service status updates propagate to the portal and inventory.'},
+  {id:'D4',col:'D',title:'Streamlined Order Journey — Technical Changes',desc:'Technical change orders: bandwidth increase, IP address change, terminal reconfiguration. Test that changes are processed through Celfocus OM, the service updates without interruption, and billing is unaffected.'},
+  {id:'D5',col:'D',title:'Streamlined Order Journey — Commercial Changes',desc:'Commercial change orders: plan upgrade, pool addition, billing date change. Test that changes flow through to Zuora and the revised billing correctly reflects on the DP next invoice from the change date.'},
+  {id:'D6',col:'D',title:'Streamlined Order Journey — Service Termination',desc:'DP terminates a service: satellite service is deactivated, final invoice is generated, and the subscription is closed. Verify all downstream systems (billing, inventory, portal) are updated and no further charges are raised.'},
+  {id:'E1',col:'E',title:'Core Billing Model Setup',desc:'Fundamental billing configuration: billing start date after activation, monthly billing cycle, MRC calculation. Verify billing starts on the correct date and the first invoice reflects the correct prorated or full-month charge.'},
+  {id:'E2',col:'E',title:'Billing — Re-Rating Model Setup',desc:'Re-rating recalculates charges retroactively when pricing errors are found or DP plan changes happen mid-cycle. Test that all CDRs from the billing period start are re-rated and the revised invoice correctly reflects new pricing.'},
+  {id:'E3',col:'E',title:'Billing — Legal and Local Entity Setup',desc:'Correct Eutelsat legal entity issues the invoice based on DP country, with the right currency, tax treatment, and company registration details. Test that billing entity selection is driven by the contract jurisdiction.'},
+  {id:'E4',col:'E',title:'Billing — Local Currency and Exchange Rate Setup',desc:'DPs billed in USD, EUR, or GBP based on contract terms. Test that the billing system applies the correct currency and current exchange rate, and invoice amounts match what the contract specifies.'},
+  {id:'E5',col:'E',title:'CDR Payload Processing from Rating Engine to Billing',desc:'O-BRM rating engine measures satellite data usage and sends CDR (Call Detail Record) payloads to Zuora for billing. Verify payload is correctly received, parsed, and generates accurate usage charges on the DP bill.',risk:true},
+  {id:'F1',col:'F',title:'Tax Calculation and Invoice Generation in SAP',desc:'SAP S/4HANA calculates correct tax (VAT, GST, withholding) based on DP country and generates a legally compliant tax invoice. Test tax rates for key geographies and invoice completeness against legal requirements.'},
+  {id:'F2',col:'F',title:'Push Invoice from SAP to Customer Portal',desc:'After SAP generates the invoice, it must be pushed to GEO Community Cloud portal for the DP to view and download. Verify invoice accuracy, delivery timing, and that the correct PDF is accessible to the DP.'},
+  {id:'F3',col:'F',title:'SAP APIs for Invoicing and Accounting Details',desc:'SAP exposes REST APIs for DPs to programmatically retrieve invoice data, payment history, and accounting summaries. Test API authentication, response accuracy, pagination, and error handling for invalid requests.'},
+  {id:'G1',col:'G',title:'Catalogue Sync — Zuora to O-BRM via MuleSoft',desc:'CRITICAL — TEST FIRST: Product catalogue changes in Zuora must sync to Oracle O-BRM via MuleSoft. Without this sync O-BRM cannot rate usage for new products. Test new products, price updates, and bundle modifications.',risk:true},
+  {id:'G2',col:'G',title:'Customer Order Management — Salesforce to Celfocus',desc:'When a DP places an order in GEO Salesforce, the order data must be sent to Celfocus OM for provisioning orchestration. Test the integration including field mapping, error handling, and retry logic for failed transmissions.'},
+  {id:'G3',col:'G',title:'Account Federation — GCRM to Full Stack',desc:'When a new DP account is created in GCRM Salesforce, it must be federated to all downstream systems: portal, ordering, billing, invoicing. Verify the account appears correctly and consistently across the full tech stack.'},
+  {id:'G4',col:'G',title:'Product Inventory Federation — Salesforce to Full Stack',desc:'When a DP service is activated, the product inventory record must update across GEO Salesforce, portal, billing, and accounting simultaneously. Test real-time synchronization accuracy and handling of out-of-order updates.'},
+  {id:'G5',col:'G',title:'Re-Rated CDR to Bill — O-BRM to Zuora',desc:'HIGH RISK: O-BRM sends re-rated CDR usage data to Zuora to trigger billing. Verify CDR payload transmission integrity, correct billing trigger, accurate charge generation, and system recovery when transmission fails.',risk:true},
+  {id:'G6',col:'G',title:'Bill to Invoice — Zuora to SAP',desc:'After Zuora finalises a bill, the billing data is sent to SAP to generate a formal tax invoice. Test data transformation accuracy, transmission timing, invoice generation in SAP, and error handling for malformed billing data.'},
+  {id:'G7',col:'G',title:'Contract Sync — GCRM to GEO Salesforce',desc:'Contracts created or updated in GCRM Salesforce must sync to GEO Salesforce so orders can be placed against them. Test sync timing for new contracts, amendment propagation, and handling of contract cancellations.'},
+  {id:'G8',col:'G',title:'Customer 360 View Data Aggregation via MuleSoft',desc:'The Customer 360 view aggregates data from all systems: contracts (GCRM), orders (GEO SF), bills (Zuora), invoices (SAP), services (Celfocus). Test data accuracy, freshness, and correct display for each source.'},
+];
 
 // ─── API ──────────────────────────────────────────────────────────────────────
 async function api(method, path, body) {
@@ -383,19 +509,32 @@ function fmtDate(iso) {
   return d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
 }
 function badgeClass(t) {
+  if (t==='Multi') return 'multi';
   const m={'Functional':'func','API/Integration':'api','End-to-End (E2E)':'e2e','Regression':'reg','Smoke':'smoke','Sanity':'san'};
   return m[t]||'def';
 }
 function avg(arr, fn) { return arr.length ? arr.reduce((s,x)=>s+fn(x),0)/arr.length : 0; }
 function confClass(s) { return s>=0.8?'cH':s>=0.6?'cM':'cL'; }
 function scoreClass(n) { return n>=80?'great':n>=65?'good':'poor'; }
+function isMulti(s) { return s && s.test_type === 'Multi'; }
+function tcByType(tcs) {
+  const m = {};
+  tcs.forEach(t => { m[t.type] = m[t.type]||[]; m[t.type].push(t); });
+  return m;
+}
 
 // ─── Render: Sidebar ──────────────────────────────────────────────────────────
 function renderSidebar() {
-  ['generate','history','settings'].forEach(v => {
+  ['generate','scope','dashboard','history','settings'].forEach(v => {
     const el = document.getElementById('nav-'+v);
     if (el) el.className = 'sb-nav-item' + (S.view===v?' active':'');
   });
+  const scopeBadgeEl = document.getElementById('scope-nav-badge');
+  if (scopeBadgeEl) {
+    const pending = SCOPE_DATA.filter(d => !isScopeDone(d)).length;
+    if (pending > 0) { scopeBadgeEl.textContent = pending+' left'; scopeBadgeEl.style.display=''; }
+    else { scopeBadgeEl.style.display='none'; }
+  }
   const el = document.getElementById('sb-sessions');
   if (!el) return;
   if (!S.sessions.length) { el.innerHTML='<div style="color:var(--sbtxt);font-size:11px;padding:4px 10px">No sessions yet</div>'; return; }
@@ -403,16 +542,16 @@ function renderSidebar() {
     <div class="sb-sess${S.current&&S.current.id===s.id?' active':''}" onclick="loadSession(${s.id})">
       <div class="sb-sess-title">${esc(s.feature_title)}</div>
       <div class="sb-sess-meta">
-        <span class="sb-badge ${badgeClass(s.test_type)}">${esc(s.test_type)}</span>
+        <span class="sb-badge ${badgeClass(s.test_type)}">${s.test_type==='Multi'?'All Types':esc(s.test_type)}</span>
         <span>${s.tc_count} TCs</span>
-        ${s.from_cache?'<span style="color:#6EE7B7;font-size:9px;font-weight:700">⚡CACHED</span>':''}
+        ${s.from_cache?'<span style="color:#6EE7B7;font-size:9px;font-weight:700">⚡</span>':''}
       </div>
     </div>`).join('');
 }
 
 // ─── Render: Topbar ───────────────────────────────────────────────────────────
 function renderTopbar() {
-  const titles = {generate:'Test Case Generator', history:'Generation History', settings:'Settings'};
+  const titles = {generate:'Test Case Generator', scope:'Scope Browser', dashboard:'Dashboard', history:'Generation History', settings:'Settings'};
   document.getElementById('topbar-title').textContent = titles[S.view]||'';
   const sep = document.getElementById('topbar-sep');
   const sub = document.getElementById('topbar-sub');
@@ -426,10 +565,11 @@ function renderTopbar() {
 // ─── Render: Stats ────────────────────────────────────────────────────────────
 function renderStats() {
   const el = document.getElementById('stats-row');
+  if (S.view === 'dashboard' || S.view === 'scope') { el.innerHTML=''; return; }
   const tc = S.current?.test_cases||[];
   const high = tc.filter(t=>t.priority==='High').length;
   const confAvg = Math.round(avg(tc,t=>t.confidence_score||0.82)*100);
-  const cacheHits = S.sessions.filter(s=>s.from_cache).length;
+  const autoCount = tc.filter(t=>t.automation_candidate).length;
   const totalSessions = S.sessions.length;
   el.innerHTML = `
     <div class="stat-card blue">
@@ -450,105 +590,234 @@ function renderStats() {
       <div class="stat-sub">${S.current?'AI quality score':'select a session'}</div>
       <div class="stat-ico">✅</div>
     </div>
-    <div class="stat-card purple">
-      <div class="stat-lbl">Cache Hits</div>
-      <div class="stat-val">${cacheHits}</div>
-      <div class="stat-sub">${totalSessions?Math.round(cacheHits/totalSessions*100):0}% saved from LLM</div>
-      <div class="stat-ico">⚡</div>
+    <div class="stat-card teal">
+      <div class="stat-lbl">Auto Candidates</div>
+      <div class="stat-val">${S.current?autoCount:'—'}</div>
+      <div class="stat-sub">${S.current&&tc.length?Math.round(autoCount/tc.length*100)+'% automatable':S.current?'0%':'select a session'}</div>
+      <div class="stat-ico">🤖</div>
     </div>`;
 }
 
-// ─── Render: Main content ─────────────────────────────────────────────────────
+// ─── Render: Main ─────────────────────────────────────────────────────────────
 function renderMain() {
   const el = document.getElementById('main-content');
-  if (S.view==='history')   { el.innerHTML = renderHistory(); return; }
-  if (S.view==='settings')  { el.innerHTML = renderSettings(); return; }
-  // generate view
-  let html = renderForm();
-  if (S.loading) html = renderLoading();
-  if (S.current && !S.loading) html += renderResults();
-  else if (!S.current && !S.loading) html += renderEmpty();
+  if (S.view==='dashboard')  { el.innerHTML = renderDashboard(); afterRender(); return; }
+  if (S.view==='scope')      { el.innerHTML = renderScopeView(); return; }
+  if (S.view==='history')    { el.innerHTML = renderHistory(); return; }
+  if (S.view==='settings')   { el.innerHTML = renderSettings(); return; }
+  let html = '';
+  if (S.loading) {
+    html = renderLoading();
+  } else if (S.current) {
+    html = renderResults();
+  } else {
+    html = renderForm() + renderEmpty();
+  }
   el.innerHTML = html;
   afterRender();
 }
 
 function renderEmpty() {
-  const hasSessions = S.sessions.length > 0;
   return `<div class="card"><div class="empty">
-    <div class="empty-ico">${hasSessions?'✨':'🚀'}</div>
-    <div class="empty-title">${hasSessions?'Select a session from the sidebar or generate new test cases':'Ready to generate your first test cases'}</div>
-    <div class="empty-sub">${hasSessions?`Your ${S.sessions.length} previous generation(s) are in the left panel`:'Fill in the form and click Generate to start the 4-agent AI pipeline'}</div>
+    <div class="empty-ico">${S.sessions.length?'✨':'🚀'}</div>
+    <div class="empty-title">${S.sessions.length?'Select a session or generate new test cases':'Ready to generate your first test cases'}</div>
+    <div class="empty-sub">${S.sessions.length?`${S.sessions.length} previous generation(s) in the left panel`:'Fill in the form and click Generate — all 5 test types will be created automatically'}</div>
   </div></div>`;
+}
+
+// ─── Scope Browser ────────────────────────────────────────────────────────────
+function isScopeDone(item) {
+  const t = item.title.toLowerCase().trim();
+  return S.sessions.some(s => s.feature_title.toLowerCase().trim() === t);
+}
+
+function fillFromScope(scopeId) {
+  const item = SCOPE_DATA.find(d => d.id === scopeId);
+  if (!item) return;
+  S.formTitle = item.title;
+  S.formDesc = item.desc;
+  S.view = 'generate';
+  S.current = null;
+  S.error = null;
+  render();
+  document.querySelector('.main-scroll').scrollTop = 0;
+  setTimeout(() => { const el = document.getElementById('f-title'); if (el) el.focus(); }, 80);
+}
+
+function renderScopeView() {
+  const done = SCOPE_DATA.filter(isScopeDone).length;
+  const total = SCOPE_DATA.length;
+  const pct = Math.round(done / total * 100);
+
+  const progHtml = `<div class="scope-prog-card">
+    <div class="scope-cov-row">
+      <div>
+        <div class="scope-cov-num">${done}<span style="font-size:15px;font-weight:500;color:var(--txt2)"> / ${total}</span></div>
+        <div class="scope-cov-sub">scope items generated</div>
+      </div>
+      <div style="flex:1">
+        <div style="display:flex;justify-content:space-between;font-size:11px;font-weight:600;color:var(--txt3);margin-bottom:5px">
+          <span>R1 SIT Coverage</span><span>${pct}%</span>
+        </div>
+        <div class="scope-track"><div class="scope-fill" style="width:${pct}%"></div></div>
+      </div>
+      <div class="scope-cov-pct">${pct}%</div>
+    </div>
+    <div style="font-size:12px;color:var(--txt3)">
+      Click any item → auto-fills the form and jumps to generation.
+      <span style="margin-left:10px;color:var(--green);font-weight:600">✅ = already generated</span>
+      <span style="margin-left:10px;color:var(--red);font-weight:600">⚠ = high risk</span>
+    </div>
+  </div>`;
+
+  const colsHtml = SCOPE_COLS.map(col => {
+    const items = SCOPE_DATA.filter(d => d.col === col.col);
+    const colDone = items.filter(isScopeDone).length;
+    const colColor = col.color;
+
+    const itemsHtml = items.map(item => {
+      const isDone = isScopeDone(item);
+      return `<div class="scope-item${isDone?' done':''}" onclick="fillFromScope('${item.id}')">
+        ${isDone?'<div class="scope-item-tick">✓</div>':''}
+        <div class="scope-item-title">${esc(item.title)}</div>
+        <div class="scope-item-desc">${esc(item.desc)}</div>
+        ${item.risk?'<div class="scope-item-risk">⚠ High Risk</div>':''}
+        <div class="scope-item-cta">→ Generate</div>
+      </div>`;
+    }).join('');
+
+    const cntColor = colDone === items.length ? 'var(--green)' : 'var(--txt3)';
+    return `<div class="scope-col-section">
+      <div class="scope-col-hdr" style="border-left-color:${colColor}">
+        <div class="scope-col-badge" style="background:${colColor}">${col.col}</div>
+        <div style="flex:1">
+          <div class="scope-col-name">${esc(col.name)}</div>
+          <div class="scope-col-sys">${esc(col.system)}</div>
+        </div>
+        <span class="scope-col-cnt" style="color:${cntColor}">${colDone}/${items.length}</span>
+      </div>
+      <div class="scope-items-grid">${itemsHtml}</div>
+    </div>`;
+  }).join('');
+
+  return `<div class="anim">${progHtml}<div class="scope-cols">${colsHtml}</div></div>`;
+}
+
+// ─── KPI Panel ────────────────────────────────────────────────────────────────
+function renderKpiPanel() {
+  const kpis = [
+    {label:'Test Coverage',        target:'100%',    icon:'🎯'},
+    {label:'Defect Leakage Rate',  target:'< 2%',    icon:'🛡'},
+    {label:'Defect Detection Eff.',target:'> 96%',   icon:'🔍'},
+    {label:'Regression Automation',target:'> 90%',   icon:'🤖'},
+    {label:'Defect Aging',         target:'< 5 days',icon:'⏱'},
+    {label:'Test Execution Rate',  target:'> 95%',   icon:'📊'},
+    {label:'Automation TC %',      target:'> 95%',   icon:'⚡'},
+  ];
+  return `<div class="card" style="margin-bottom:22px">
+    <div class="card-head" onclick="this.parentElement.querySelector('.kpi-body').style.display=this.parentElement.querySelector('.kpi-body').style.display==='none'?'block':'none'" style="cursor:pointer">
+      <div class="card-title" style="font-size:13px">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="var(--purple)"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14l-5-5 1.41-1.41L12 14.17l7.59-7.59L21 8l-9 9z"/></svg>
+        Lot B KPI Targets
+      </div>
+      <span style="font-size:11px;color:var(--txt3)">Slide 19 · click to expand/collapse</span>
+    </div>
+    <div class="kpi-body" style="display:none">
+      <div style="padding:14px 18px;display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px">
+        ${kpis.map(k=>`<div style="background:var(--bg);border-radius:8px;padding:10px 12px;border:1px solid var(--border)">
+          <div style="font-size:18px;margin-bottom:4px">${k.icon}</div>
+          <div style="font-size:11px;font-weight:700;color:var(--txt3);text-transform:uppercase;letter-spacing:.5px">${esc(k.label)}</div>
+          <div style="font-size:17px;font-weight:800;color:var(--purple);margin-top:2px">${esc(k.target)}</div>
+        </div>`).join('')}
+      </div>
+      <div style="padding:0 18px 14px;font-size:11px;color:var(--txt3)">Source: Prodapt Lot B Proposal Slide 19 · Target: R3 end-state</div>
+    </div>
+  </div>`;
 }
 
 // ─── Form ─────────────────────────────────────────────────────────────────────
 function renderForm() {
-  const modOpts = MODULES.map(m=>`<option${m===S.module?' selected':''}>${esc(m)}</option>`).join('');
-  const typOpts = TYPES.map(t=>`<option>${esc(t)}</option>`).join('');
   const relOpts = RELEASES.map(r=>`<option value="${r.val}"${r.val===S.release?' selected':''}>${esc(r.label)}</option>`).join('');
   const selRel = RELEASES.find(r=>r.val===S.release)||RELEASES[0];
-  return `<div class="card" style="margin-bottom:22px">
+  return `<div class="card" style="margin-bottom:12px">
     <div class="card-head">
       <div class="card-title">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="var(--blue)"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
         Generate Test Cases
       </div>
-      <span style="font-size:12px;color:var(--txt3)">4-Agent Pipeline · ~35 test cases</span>
+      <span style="font-size:12px;color:var(--txt3)">All 5 types · Auto module detection · 4-Agent Pipeline</span>
     </div>
     <div class="card-body">
       ${S.error?`<div class="error-box"><span>⚠️</span><div><strong>Generation failed.</strong> ${esc(S.error)}</div></div>`:''}
+      ${S.oosWarning?`<div style="background:#FEF3C7;border:1px solid #F59E0B;border-radius:8px;padding:10px 14px;margin-bottom:14px;display:flex;gap:10px;align-items:flex-start">
+        <span style="color:#D97706;font-size:16px">⚠</span>
+        <div><strong style="color:#92400E;font-size:13px">Out-of-scope warning</strong>
+        <div style="font-size:12px;color:#78350F;margin-top:2px">${esc(S.oosWarning)}</div></div>
+        <button onclick="S.oosWarning='';renderMain()" style="margin-left:auto;font-size:12px;color:#92400E;background:none;border:none;cursor:pointer;padding:2px 6px">✕</button>
+      </div>`:''}
+      <div style="background:linear-gradient(135deg,#EFF6FF,#F5F3FF);border:1px solid #DBEAFE;border-radius:9px;padding:10px 14px;margin-bottom:14px;display:flex;flex-wrap:wrap;gap:8px;align-items:center">
+        <span style="font-size:12px;font-weight:600;color:var(--blue)">Will generate:</span>
+        ${TYPE_ORDER.map(t=>`<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:99px;font-size:11px;font-weight:700;background:white;color:${TYPE_COLORS[t]||'#64748B'};border:1px solid currentColor">${esc(t)}</span>`).join('')}
+        <span style="margin-left:auto;font-size:11px;color:var(--txt3)">~10–15 cases each · parallel</span>
+      </div>
       <div class="form-grid">
-        <div class="fg"><label class="flbl">Module / System</label>
-          <select class="finput" id="f-module">${modOpts}</select></div>
-        <div class="fg"><label class="flbl">Test Type</label>
-          <select class="finput" id="f-type">${typOpts}</select></div>
-        <div class="fg full">
+        <div class="fg full"><label class="flbl">Feature Title <span style="color:var(--red)">*</span></label>
+          <input class="finput" id="f-title" value="${esc(S.formTitle)}" placeholder="e.g. Streamlined Order Journey — LEO Satellite Service Activation"
+            oninput="S.formTitle=this.value" onkeydown="if(event.key==='Enter')generate()" onblur="checkOos()"/></div>
+        <div class="fg full"><label class="flbl">Description <span style="font-weight:400;color:var(--txt3)">(optional — helps module auto-detection)</span></label>
+          <textarea class="finput" id="f-desc" placeholder="Describe the feature — mention systems (Zuora, Axiros, Celfocus...), business rules, or edge cases to focus on…" rows="3" oninput="S.formDesc=this.value">${esc(S.formDesc)}</textarea></div>
+        <div class="fg">
           <label class="flbl">Release
             <span style="margin-left:8px;font-size:11px;font-weight:400;color:var(--txt3)" id="rel-desc">${esc(selRel.desc)}</span>
           </label>
           <select class="finput" id="f-release" onchange="S.release=this.value;document.getElementById('rel-desc').textContent=RELEASES.find(r=>r.val===this.value)?.desc||''">${relOpts}</select>
         </div>
-        <div class="fg full"><label class="flbl">Feature Title <span style="color:var(--red)">*</span></label>
-          <input class="finput" id="f-title" placeholder="e.g. Streamlined Order Journey — LEO Satellite Service Activation"
-            onkeydown="if(event.key==='Enter')generate()"/></div>
-        <div class="fg full"><label class="flbl">Description <span style="font-weight:400;color:var(--txt3)">(optional)</span></label>
-          <textarea class="finput" id="f-desc" placeholder="Describe the feature — include system touchpoints, business rules, edge cases to cover…" rows="3"></textarea></div>
         <div class="fg"><label class="flbl">Tester Name</label>
-          <input class="finput" id="f-tester" placeholder="Your name"/></div>
+          <input class="finput" id="f-tester" value="${esc(S.formTester)}" placeholder="Your name" oninput="S.formTester=this.value"/>
+        </div>
+        <div class="fg">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:9px 12px;background:${S.chainMode?'#EFF6FF':'var(--card)'};border:1px solid ${S.chainMode?'var(--blue)':'var(--border)'};border-radius:8px;height:100%">
+            <input type="checkbox" id="f-chain" ${S.chainMode?'checked':''} onchange="S.chainMode=this.checked;renderMain()" style="accent-color:var(--blue);width:15px;height:15px"/>
+            <div>
+              <div style="font-size:12px;font-weight:600;color:${S.chainMode?'var(--blue)':'var(--txt2)'}">Full E2E Chain Mode</div>
+              <div style="font-size:11px;color:var(--txt3);margin-top:2px">Portal→Zuora→Celfocus→Axiros→BRM→SAP→ServiceNow</div>
+            </div>
+          </label>
+        </div>
         <div class="fg" style="justify-content:flex-end">
           <button class="gen-btn" onclick="generate()" id="gen-btn">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg>
-            Generate Test Cases
+            Generate All Test Types
           </button>
         </div>
       </div>
     </div>
-  </div>`;
+  </div>
+  ${renderKpiPanel()}`;
 }
 
 function renderLoading() {
-  const stg = [
-    'Scout Agent — identifying 7 test scenario areas',
-    'Generator Agent — creating 5 test cases per area (~35 total)',
-    'Reviewer Agent — assigning priorities',
-    'Evaluator Agent — scoring confidence & hallucination risk',
-  ];
-  const idx = Math.floor(S.progress/25);
-  const pct = Math.min(S.progress+1, 97);
+  const elapsed = S.loadingStart ? Math.round((Date.now() - S.loadingStart) / 1000) : 0;
+  const mins = Math.floor(elapsed / 60), secs = elapsed % 60;
+  const elapsedStr = mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
   return `<div class="card" style="margin-bottom:22px"><div class="loading-wrap">
-    <div style="font-size:15px;font-weight:700;color:var(--txt);margin-bottom:4px">Generating test cases…</div>
-    <div style="font-size:13px;color:var(--txt2);margin-bottom:14px">4-agent agentic pipeline running. This takes 1–3 minutes.</div>
-    <div class="loading-bar-track"><div class="loading-bar-fill" style="width:${pct}%"></div></div>
-    <div style="font-size:11px;color:var(--txt3);margin-bottom:12px">${pct}% complete</div>
+    <div style="font-size:16px;font-weight:700;color:var(--txt);margin-bottom:6px">Generating all 5 test type suites in parallel…</div>
+    <div style="font-size:13px;color:var(--txt2);margin-bottom:16px">
+      Scout → Generate → Review → Evaluate running concurrently for each type.<br>
+      <span style="color:var(--txt3);font-size:12px">Typically 5–12 minutes depending on API response time.</span>
+    </div>
+    <div class="loading-bar-track"><div class="loading-bar-fill"></div></div>
+    <div style="font-size:12px;color:var(--txt3);margin:6px 0 18px;display:flex;justify-content:space-between">
+      <span>Running… all 5 pipelines active</span>
+      <span id="elapsed-timer">⏱ ${elapsedStr}</span>
+    </div>
     <div class="stage-list">
-      ${stg.map((s,i)=>{
-        const st=i<idx?'done':i===idx?'run':'wait';
-        return `<div class="stage-row"><div class="stage-dot ${st}"></div>
-          <div class="stage-lbl ${st}">${s}</div>
-          ${st==='done'?'<span style="margin-left:auto;font-size:11px;color:var(--green)">✓</span>':
-            st==='run'?'<span style="margin-left:auto;font-size:11px;color:var(--blue)">…</span>':''}
-        </div>`;
-      }).join('')}
+      ${TYPE_ORDER.map((t,i) => `<div class="stage-row">
+        <div class="stage-dot run" style="background:${TYPE_COLORS[t]||'var(--blue)'}"></div>
+        <div class="stage-lbl" style="color:${TYPE_COLORS[t]||'var(--blue)'};font-size:13px;font-weight:600">${t}</div>
+        <div style="margin-left:auto;font-size:11px;color:var(--txt3)">Scout → Generate → Review → Evaluate</div>
+        <span style="margin-left:10px;font-size:11px;color:${TYPE_COLORS[t]||'var(--blue)'}">…</span>
+      </div>`).join('')}
     </div>
   </div></div>`;
 }
@@ -557,40 +826,70 @@ function renderLoading() {
 function renderResults() {
   const s = S.current;
   const tc = s.test_cases||[];
+  const multi = isMulti(s);
+  const byType = tcByType(tc);
+
+  const tabs = [];
+  tabs.push({key:'overview', label:'Overview', count:tc.length, cls:''});
+  if (multi) {
+    TYPE_ORDER.forEach((tt, i) => {
+      const cls = ['t-func','t-intg','t-regr','t-uat','t-e2e'][i];
+      const n = (byType[tt]||[]).length;
+      if (n > 0) tabs.push({key:tt, label:tt.replace('End-to-End (E2E)','E2E').replace('API/Integration','Integration'), count:n, cls});
+    });
+  }
+  tabs.push({key:'metrics', label:'Quality Metrics', count:null, cls:''});
+  tabs.push({key:'followup', label:'Follow-up Chat', count:null, cls:''});
+
+  const tabHtml = tabs.map(t => {
+    const active = S.tab===t.key;
+    return `<button class="tab-btn${active?' active':''} ${t.cls}" onclick="setTab('${t.key.replace(/'/g,'')}')">
+      ${esc(t.label)}${t.count!=null?`<span class="tab-count-n" style="${active?`background:${TYPE_COLORS[t.key]||'var(--blue)'}`:''}">${t.count}</span>`:''}
+    </button>`;
+  }).join('');
+
   return `<div class="card anim">
     <div class="card-head">
       <div class="card-title">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="var(--green)"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
         ${esc(s.feature_title)}
       </div>
-      <div style="display:flex;gap:8px;align-items:center">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <button onclick="newSession()" style="display:inline-flex;align-items:center;gap:5px;padding:5px 12px;background:linear-gradient(135deg,#3B82F6,#8B5CF6);color:#fff;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;border:none">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="white"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg> New Generation
+        </button>
         ${s.from_cache?'<span class="cache-pill hit">⚡ Cached</span>':''}
-        <span style="font-size:12px;color:var(--txt3)">${esc(s.module)} · ${esc(s.test_type)} · ${esc(s.tester_name)}</span>
+        ${s.chain_mode?'<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:99px;font-size:11px;font-weight:700;background:#EFF6FF;color:var(--blue);border:1px solid #BFDBFE">🔗 E2E Chain</span>':''}
+        ${s.release?`<span style="padding:4px 10px;border-radius:99px;font-size:11px;font-weight:700;background:#F5F3FF;color:var(--purple);border:1px solid #DDD6FE">${esc(s.release)}</span>`:''}
+        <span style="padding:4px 10px;border-radius:99px;font-size:11px;font-weight:600;background:var(--bg);color:var(--txt2);border:1px solid var(--border)">${esc(s.module)}</span>
+        ${multi?`<span style="padding:4px 10px;border-radius:99px;font-size:11px;font-weight:700;background:#ECFEFF;color:#0891B2;border:1px solid #A5F3FC">All 5 Types · ${tc.length} TCs</span>`:`<span style="font-size:12px;color:var(--txt3)">${esc(s.test_type)}</span>`}
+        <span style="font-size:12px;color:var(--txt3)">${esc(s.tester_name)}</span>
       </div>
     </div>
-    <div class="tab-bar">
-      <button class="tab-btn${S.tab==='testcases'?' active':''}" onclick="setTab('testcases')">
-        Test Cases <span class="tab-count">${tc.length}</span>
-      </button>
-      <button class="tab-btn${S.tab==='metrics'?' active':''}" onclick="setTab('metrics')">Quality Metrics</button>
-      <button class="tab-btn${S.tab==='followup'?' active':''}" onclick="setTab('followup')">Follow-up Chat</button>
-    </div>
+    ${s.out_of_scope_warning?`<div style="background:#FEF3C7;border-bottom:1px solid #FDE68A;padding:8px 18px;display:flex;gap:8px;align-items:flex-start;font-size:12px">
+      <span style="color:#D97706">⚠</span>
+      <span style="color:#92400E">${esc(s.out_of_scope_warning)}</span>
+    </div>`:''}
+    <div class="tab-bar">${tabHtml}</div>
     <div id="tab-content">${renderTabContent()}</div>
   </div>`;
 }
 
 function renderTabContent() {
-  if (S.tab==='testcases') return renderTestCasesTab();
   if (S.tab==='metrics')   return renderMetricsTab();
   if (S.tab==='followup')  return renderFollowupTab();
-  return '';
+  // overview or a type tab
+  const tc = S.current?.test_cases||[];
+  const typeFilter = S.tab==='overview' ? null : S.tab;
+  const showTypeCol = S.tab==='overview' && isMulti(S.current);
+  return renderTestCasesTab(tc, typeFilter, showTypeCol);
 }
 
 // ─── Test Cases Tab ───────────────────────────────────────────────────────────
-function renderTestCasesTab() {
-  const tc = S.current.test_cases||[];
+function renderTestCasesTab(allTc, typeFilter, showTypeCol) {
+  const tc = typeFilter ? allTc.filter(t=>t.type===typeFilter) : allTc;
   const filtered = S.tcSearch
-    ? tc.filter(t=>t.description.toLowerCase().includes(S.tcSearch.toLowerCase())||t.tc_id.includes(S.tcSearch.toUpperCase()))
+    ? tc.filter(t=>t.description.toLowerCase().includes(S.tcSearch.toLowerCase())||t.tc_id.toLowerCase().includes(S.tcSearch.toLowerCase()))
     : tc;
   const total = filtered.length;
   const pages = Math.ceil(total/PAGE);
@@ -598,13 +897,15 @@ function renderTestCasesTab() {
   const paged = filtered.slice(pg*PAGE,(pg+1)*PAGE);
   const high=tc.filter(t=>t.priority==='High').length, med=tc.filter(t=>t.priority==='Medium').length, low=tc.filter(t=>t.priority==='Low').length;
 
-  const rows = paged.map(tc => {
-    const pct = Math.round((tc.confidence_score||0.82)*100);
-    const exp = S.expandedId===tc.id;
+  const cols = showTypeCol ? 8 : 7;
+
+  const rows = paged.map(row => {
+    const pct = Math.round((row.confidence_score||0.82)*100);
+    const exp = S.expandedId===row.id;
     let detailHtml='';
     if (exp) {
-      if (S.editingId===tc.id) {
-        detailHtml=`<td colspan="6" style="padding:0 11px 12px">
+      if (S.editingId===row.id) {
+        detailHtml=`<td colspan="${cols}" style="padding:0 11px 12px">
           <div class="tc-detail">
             <div class="fg" style="margin-bottom:10px"><label class="dlbl">Description</label>
               <textarea class="edit-area" id="edit-desc" rows="2">${esc(S.editData.description||'')}</textarea></div>
@@ -612,33 +913,43 @@ function renderTestCasesTab() {
               <div><label class="dlbl">Steps</label><textarea class="edit-area" id="edit-steps" rows="4">${esc(S.editData.steps||'')}</textarea></div>
               <div><label class="dlbl">Expected Result</label><textarea class="edit-area" id="edit-result" rows="4">${esc(S.editData.expected_result||'')}</textarea></div>
             </div>
-            <button class="save-btn" onclick="saveEdit(${tc.id})">Save</button>
+            <button class="save-btn" onclick="saveEdit(${row.id})">Save</button>
             <button class="cancel-btn" onclick="cancelEdit()">Cancel</button>
           </div></td>`;
       } else {
-        detailHtml=`<td colspan="6" style="padding:0 11px 12px">
+        const autoNote = row.automation_notes ? `<div style="margin-top:6px;font-size:11px;color:var(--txt3)"><strong>Automation notes:</strong> ${esc(row.automation_notes)}</div>` : '';
+        detailHtml=`<td colspan="${cols}" style="padding:0 11px 12px">
           <div class="tc-detail">
-            <div style="font-size:13px;color:var(--txt);line-height:1.6;margin-bottom:12px">${esc(tc.description)}</div>
+            <div style="font-size:13px;color:var(--txt);line-height:1.6;margin-bottom:12px">${esc(row.description)}</div>
             <div class="detail-grid">
-              <div><div class="dlbl">Steps</div><div class="dtxt">${esc(tc.steps||'—')}</div></div>
-              <div><div class="dlbl">Expected Result</div><div class="dtxt">${esc(tc.expected_result||'—')}</div></div>
+              <div><div class="dlbl">Steps</div><div class="dtxt">${esc(row.steps||'—')}</div></div>
+              <div><div class="dlbl">Expected Result</div><div class="dtxt">${esc(row.expected_result||'—')}</div></div>
             </div>
+            ${autoNote}
             <div style="margin-top:11px;display:flex;gap:14px;align-items:center">
-              <div><span class="dlbl">Hal. Risk: </span><span class="hal-pill ${tc.hallucination_risk}">${tc.hallucination_risk}</span></div>
-              ${tc.is_edited?'<span style="font-size:11px;color:var(--amber);font-weight:700">✏ Edited</span>':''}
+              <div><span class="dlbl">Hal. Risk: </span><span class="hal-pill ${row.hallucination_risk}">${row.hallucination_risk}</span></div>
+              ${row.is_edited?'<span style="font-size:11px;color:var(--amber);font-weight:700">✏ Edited</span>':''}
               <button style="margin-left:auto;padding:5px 11px;background:#EFF6FF;color:var(--blue);border-radius:7px;font-size:12px;font-weight:600"
-                onclick="startEdit(${tc.id})">Edit</button>
+                onclick="startEdit(${row.id})">Edit</button>
             </div>
           </div></td>`;
       }
     }
+    const autoBadge = row.automation_candidate
+      ? `<span style="display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border-radius:99px;font-size:10px;font-weight:700;background:#ECFDF5;color:#059669;border:1px solid #A7F3D0">🤖 Auto</span>`
+      : `<span style="display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border-radius:99px;font-size:10px;font-weight:700;background:#F8FAFC;color:#94A3B8;border:1px solid #E2E8F0">👤 Manual</span>`;
+    const typeCell = showTypeCol
+      ? `<td><span style="display:inline-flex;align-items:center;padding:2px 8px;border-radius:99px;font-size:10px;font-weight:700;background:white;color:${TYPE_COLORS[row.type]||'#64748B'};border:1px solid currentColor">${esc(row.type||'')}</span></td>`
+      : '';
     return `<tr class="${exp?'exp':''}">
-      <td><span class="tc-id">${esc(tc.tc_id)}</span></td>
-      <td><div class="tc-desc-short" onclick="toggleExpand(${tc.id})">${esc(tc.description.slice(0,88))}${tc.description.length>88?'…':''}</div></td>
-      <td><span class="pri-pill ${tc.priority}">${tc.priority}</span></td>
-      <td><div class="conf-wrap"><div class="conf-bar"><div class="conf-fill ${confClass(tc.confidence_score||0.82)}" style="width:${pct}%"></div></div><div class="conf-pct">${pct}%</div></div></td>
-      <td><span class="hal-pill ${tc.hallucination_risk}">${tc.hallucination_risk}</span></td>
-      <td><button class="exp-btn" onclick="toggleExpand(${tc.id})">${exp?'▲ Less':'▼ More'}</button></td>
+      <td><span class="tc-id">${esc(row.tc_id)}</span></td>
+      ${typeCell}
+      <td><div class="tc-desc-short" onclick="toggleExpand(${row.id})">${esc(row.description.slice(0,80))}${row.description.length>80?'…':''}</div></td>
+      <td><span class="pri-pill ${row.priority}">${row.priority}</span></td>
+      <td>${autoBadge}</td>
+      <td><div class="conf-wrap"><div class="conf-bar"><div class="conf-fill ${confClass(row.confidence_score||0.82)}" style="width:${pct}%"></div></div><div class="conf-pct">${pct}%</div></div></td>
+      <td><span class="hal-pill ${row.hallucination_risk}">${row.hallucination_risk}</span></td>
+      <td><button class="exp-btn" onclick="toggleExpand(${row.id})">${exp?'▲':'▼'}</button></td>
     </tr>
     ${exp?`<tr>${detailHtml}</tr>`:''}`;
   }).join('');
@@ -657,12 +968,14 @@ function renderTestCasesTab() {
     </div>`;
   }
 
+  const thType = showTypeCol ? '<th>Type</th>' : '';
+
   return `<div style="padding:16px 20px">
     <div class="pri-summary">
       <span class="pribadge H">🔴 ${high} High</span>
       <span class="pribadge M">🟡 ${med} Medium</span>
       <span class="pribadge L">🟢 ${low} Low</span>
-      <span style="margin-left:auto;font-size:12px;color:var(--txt3)">${tc.length} total test cases</span>
+      <span style="margin-left:auto;font-size:12px;color:var(--txt3)">${tc.length} test cases${typeFilter?` · ${typeFilter}`:''}</span>
     </div>
     <div class="search-wrap">
       <span class="search-ico">🔍</span>
@@ -671,8 +984,8 @@ function renderTestCasesTab() {
     </div>
     <div style="overflow-x:auto">
       <table class="tc-table">
-        <thead><tr><th>ID</th><th>Description</th><th>Priority</th><th>Confidence</th><th>Hal. Risk</th><th></th></tr></thead>
-        <tbody>${rows||'<tr><td colspan="6" style="text-align:center;padding:28px;color:var(--txt3)">No results</td></tr>'}</tbody>
+        <thead><tr><th>ID</th>${thType}<th>Description</th><th>Priority</th><th>Automation</th><th>Confidence</th><th>Hal. Risk</th><th></th></tr></thead>
+        <tbody>${rows||`<tr><td colspan="${cols}" style="text-align:center;padding:28px;color:var(--txt3)">No results</td></tr>`}</tbody>
       </table>
     </div>
     ${pagination}
@@ -704,7 +1017,7 @@ function renderMetricsTab() {
     const pct=Math.round((t.confidence_score||0.82)*100);
     return `<tr>
       <td><span style="font-family:monospace;font-size:11px;font-weight:700;color:var(--txt3)">${esc(t.tc_id)}</span></td>
-      <td style="max-width:280px">${esc(t.description.slice(0,78))}${t.description.length>78?'…':''}</td>
+      <td style="max-width:260px">${esc(t.description.slice(0,75))}${t.description.length>75?'…':''}</td>
       <td><span class="pri-pill ${t.priority}" style="font-size:10px">${t.priority}</span></td>
       <td><div class="conf-wrap"><div class="conf-bar"><div class="conf-fill ${confClass(t.confidence_score||0.82)}" style="width:${pct}%"></div></div><div class="conf-pct">${pct}%</div></div></td>
       <td><span class="hal-pill ${t.hallucination_risk}">${t.hallucination_risk}</span></td>
@@ -737,7 +1050,7 @@ function renderMetricsTab() {
     <div class="mcard">
       <div class="mtitle">Quality Summary</div>
       ${[['Total Test Cases',tc.length],['High Confidence (≥80%)',tc.filter(t=>(t.confidence_score||0.82)>=0.8).length],
-        ['Low Hallucination Risk',rLow],['Avg Steps per Case',Math.round(avg(tc,t=>(t.steps||'').split('\n').length))]].map(([l,v])=>`
+        ['Low Hallucination Risk',rLow],['Automation Candidates',tc.filter(t=>t.automation_candidate).length]].map(([l,v])=>`
         <div style="display:flex;justify-content:space-between;font-size:12px;padding:5px 0;border-bottom:1px solid var(--border)">
           <span style="color:var(--txt2)">${l}</span><span style="font-weight:700;color:var(--txt)">${v}</span>
         </div>`).join('')}
@@ -755,9 +1068,9 @@ function renderMetricsTab() {
 // ─── Follow-up Tab ────────────────────────────────────────────────────────────
 function renderFollowupTab() {
   const notice = S.newCasesAdded>0
-    ? `<div class="new-cases-notice">✅ ${S.newCasesAdded} new test case(s) added. Reload this session to see them in the Test Cases tab.</div>`
+    ? `<div class="new-cases-notice">✅ ${S.newCasesAdded} new test case(s) added. Reload this session to see them.</div>`
     : '';
-  const msgs = S.chatMsgs.map(m=>`<div class="chat-bubble ${m.role}" style="white-space:pre-wrap">${esc(m.text)}</div>`).join('');
+  const msgs = S.chatMsgs.map(m=>`<div class="chat-bubble ${m.role}">${esc(m.text)}</div>`).join('');
   const thinking = S.chatLoading?`<div class="chat-bubble bot">
     <span style="animation:pulse 1s infinite;display:inline-block">●</span>
     <span style="animation:pulse 1s .2s infinite;display:inline-block;margin:0 3px">●</span>
@@ -779,12 +1092,140 @@ function renderFollowupTab() {
   </div>`;
 }
 
+// ─── Dashboard ────────────────────────────────────────────────────────────────
+function renderDashboard() {
+  if (S.dashLoading) {
+    return `<div class="card"><div class="empty"><div class="empty-ico">📊</div><div class="empty-title">Loading dashboard…</div></div></div>`;
+  }
+  if (!S.dashStats) {
+    return `<div class="card"><div class="empty"><div class="empty-ico">📊</div><div class="empty-title">No data yet</div><div class="empty-sub">Generate some test cases first, then come back to the Dashboard</div></div></div>`;
+  }
+  const d = S.dashStats;
+  const kpis = [
+    {label:'Test Coverage',        target:'100%',    icon:'🎯'},
+    {label:'Defect Leakage Rate',  target:'< 2%',    icon:'🛡'},
+    {label:'Defect Detection Eff.',target:'> 96%',   icon:'🔍'},
+    {label:'Regression Automation',target:'> 90%',   icon:'🤖'},
+    {label:'Defect Aging',         target:'< 5 days',icon:'⏱'},
+    {label:'Test Execution Rate',  target:'> 95%',   icon:'📊'},
+    {label:'Automation TC %',      target:'> 95%',   icon:'⚡'},
+  ];
+
+  const recentRows = (d.recent_sessions||[]).map(s=>`<tr>
+    <td style="max-width:220px;font-weight:600;font-size:12px">${esc(s.feature_title)}${s.feature_title&&s.feature_title.length>=55?'…':''}</td>
+    <td style="font-size:11px;color:var(--txt2)">${esc(s.module)}</td>
+    <td><span class="sb-badge ${badgeClass(s.test_type)}" style="padding:3px 8px">${s.test_type==='Multi'?'All Types':esc(s.test_type)}</span></td>
+    <td style="font-weight:700;font-size:12px">${s.tc_count}</td>
+    <td style="font-size:11px;color:var(--txt3)">${fmtDate(s.created_at)}</td>
+    <td><button class="exp-btn" onclick="loadSession(${s.id});setView('generate')">Open</button></td>
+  </tr>`).join('');
+
+  return `
+    <div class="stats-row" style="margin-bottom:22px">
+      <div class="stat-card blue"><div class="stat-lbl">Total Sessions</div><div class="stat-val">${d.total_sessions}</div><div class="stat-sub">all generations</div><div class="stat-ico">📁</div></div>
+      <div class="stat-card green"><div class="stat-lbl">Total Test Cases</div><div class="stat-val">${d.total_test_cases}</div><div class="stat-sub">across all sessions</div><div class="stat-ico">🧪</div></div>
+      <div class="stat-card teal"><div class="stat-lbl">Automation Rate</div><div class="stat-val">${d.automation_rate}%</div><div class="stat-sub">candidates overall</div><div class="stat-ico">🤖</div></div>
+      <div class="stat-card purple"><div class="stat-lbl">Avg Confidence</div><div class="stat-val">${d.avg_confidence}%</div><div class="stat-sub">AI quality score</div><div class="stat-ico">✅</div></div>
+    </div>
+    <div class="dash-grid">
+      <div class="dash-chart-card">
+        <div class="dash-chart-title">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="var(--blue)"><path d="M11 2v20c-5.07-.5-9-4.79-9-10s3.93-9.5 9-10zm2.03 0v8.99H22c-.47-4.74-4.24-8.52-8.97-8.99zm0 11.01V22c4.74-.47 8.5-4.25 8.97-8.99h-8.97z"/></svg>
+          Test Cases by Type
+        </div>
+        <div class="dash-chart-wrap"><canvas id="chart-by-type"></canvas></div>
+      </div>
+      <div class="dash-chart-card">
+        <div class="dash-chart-title">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="var(--purple)"><path d="M5 9.2h3V19H5zM10.6 5h2.8v14h-2.8zm5.6 8H19v6h-2.8z"/></svg>
+          Test Cases by Module
+        </div>
+        <div class="dash-chart-wrap"><canvas id="chart-by-module"></canvas></div>
+      </div>
+      <div class="dash-chart-card">
+        <div class="dash-chart-title">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="var(--amber)"><path d="M11 2v20c-5.07-.5-9-4.79-9-10s3.93-9.5 9-10zm2.03 0v8.99H22c-.47-4.74-4.24-8.52-8.97-8.99zm0 11.01V22c4.74-.47 8.5-4.25 8.97-8.99h-8.97z"/></svg>
+          Priority Distribution
+        </div>
+        <div class="dash-chart-wrap"><canvas id="chart-priority"></canvas></div>
+      </div>
+      <div class="dash-chart-card">
+        <div class="dash-chart-title" style="margin-bottom:12px">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="var(--green)"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+          Lot B KPI Targets
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          ${kpis.map(k=>`<div style="background:var(--bg);border-radius:7px;padding:8px 10px">
+            <div style="font-size:16px">${k.icon}</div>
+            <div style="font-size:10px;font-weight:700;color:var(--txt3);text-transform:uppercase;margin-top:2px">${esc(k.label)}</div>
+            <div style="font-size:14px;font-weight:800;color:var(--purple)">${esc(k.target)}</div>
+          </div>`).join('')}
+        </div>
+      </div>
+    </div>
+    <div class="dash-recent">
+      <div class="dash-recent-head">📋 Recent Sessions</div>
+      <div style="overflow-x:auto">
+        <table class="tc-table">
+          <thead><tr><th>Feature</th><th>Module</th><th>Type</th><th>TCs</th><th>Created</th><th></th></tr></thead>
+          <tbody>${recentRows||'<tr><td colspan="6" style="text-align:center;padding:28px;color:var(--txt3)">No sessions yet</td></tr>'}</tbody>
+        </table>
+      </div>
+    </div>`;
+}
+
+function initCharts(d) {
+  Object.values(chartInstances).forEach(c => { try { c.destroy(); } catch{} });
+  chartInstances = {};
+
+  const chartDefaults = {
+    plugins: { legend: { labels: { font: { family: '-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif', size: 11 }, boxWidth: 12 } } },
+  };
+
+  // Doughnut: by type
+  const ctxType = document.getElementById('chart-by-type');
+  if (ctxType && d.tc_by_type && Object.keys(d.tc_by_type).length) {
+    const labels = Object.keys(d.tc_by_type);
+    const colors = labels.map(l => TYPE_COLORS[l] || '#94A3B8');
+    chartInstances.byType = new Chart(ctxType, {
+      type: 'doughnut',
+      data: { labels, datasets: [{ data: Object.values(d.tc_by_type), backgroundColor: colors, borderWidth: 2, borderColor: '#fff' }] },
+      options: { responsive: true, maintainAspectRatio: true, cutout: '60%', ...chartDefaults },
+    });
+  }
+
+  // Horizontal bar: by module
+  const ctxMod = document.getElementById('chart-by-module');
+  if (ctxMod && d.tc_by_module && Object.keys(d.tc_by_module).length) {
+    const modLabels = Object.keys(d.tc_by_module).map(l => l.length > 20 ? l.slice(0,18)+'…' : l);
+    chartInstances.byModule = new Chart(ctxMod, {
+      type: 'bar',
+      data: { labels: modLabels, datasets: [{ data: Object.values(d.tc_by_module), backgroundColor: '#3B82F6', borderRadius: 4 }] },
+      options: { indexAxis: 'y', responsive: true, maintainAspectRatio: true, plugins: { legend: { display: false } }, scales: { x: { grid: { color: '#E2E8F0' } } } },
+    });
+  }
+
+  // Doughnut: priority
+  const ctxPri = document.getElementById('chart-priority');
+  if (ctxPri && d.tc_by_priority) {
+    chartInstances.byPriority = new Chart(ctxPri, {
+      type: 'doughnut',
+      data: {
+        labels: ['High','Medium','Low'],
+        datasets: [{ data: [d.tc_by_priority.High||0, d.tc_by_priority.Medium||0, d.tc_by_priority.Low||0],
+          backgroundColor: ['#EF4444','#F59E0B','#10B981'], borderWidth: 2, borderColor: '#fff' }],
+      },
+      options: { responsive: true, maintainAspectRatio: true, cutout: '60%', ...chartDefaults },
+    });
+  }
+}
+
 // ─── History View ─────────────────────────────────────────────────────────────
 function renderHistory() {
-  const rows = S.sessions.map(s=>`<tr class="tc-table">
+  const rows = S.sessions.map(s=>`<tr>
     <td style="max-width:220px;font-weight:600">${esc(s.feature_title.slice(0,50))}${s.feature_title.length>50?'…':''}</td>
     <td style="font-size:12px;color:var(--txt2)">${esc(s.module)}</td>
-    <td><span class="sb-badge ${badgeClass(s.test_type)}" style="padding:3px 8px;border-radius:99px;font-size:11px">${esc(s.test_type)}</span></td>
+    <td><span class="sb-badge ${badgeClass(s.test_type)}" style="padding:3px 8px;border-radius:99px;font-size:11px">${s.test_type==='Multi'?'All Types':esc(s.test_type)}</span></td>
     <td style="font-size:12px;color:var(--txt2)">${esc(s.tester_name)}</td>
     <td style="font-weight:700">${s.tc_count}</td>
     <td>${s.from_cache?'<span style="color:var(--green);font-size:11px;font-weight:700">⚡ Cached</span>':'<span style="color:var(--txt3);font-size:11px">Live</span>'}</td>
@@ -794,7 +1235,7 @@ function renderHistory() {
   return `<div class="card">
     <div class="card-head">
       <div class="card-title">📋 All Sessions</div>
-      <span style="font-size:12px;color:var(--txt3)">${S.sessions.length} total generations</span>
+      <span style="font-size:12px;color:var(--txt3)">${S.sessions.length} total</span>
     </div>
     <div style="overflow-x:auto"><table class="tc-table">
       <thead><tr><th>Feature</th><th>Module</th><th>Test Type</th><th>Tester</th><th>TCs</th><th>Cache</th><th>Created</th><th></th></tr></thead>
@@ -841,7 +1282,7 @@ function renderJiraModal() {
   if (S.jiraTab==='config') {
     body=`<div class="status-box warn">
       <span style="font-size:18px">🔧</span>
-      <div><strong>Setup Required:</strong> Enter your Jira credentials. Test cases will be created as Stories in your backlog — unassigned, ready for your Scrum Master.</div>
+      <div><strong>Setup Required:</strong> Enter your Jira credentials. Test cases will be created as Stories in your backlog.</div>
     </div>
     <div class="form-grid">
       <div class="fg full"><label class="flbl">Jira URL</label>
@@ -857,21 +1298,20 @@ function renderJiraModal() {
     const ir = S.importResult;
     if (!ir) {
       body=`<div class="empty"><div class="empty-ico">📋</div><div class="empty-title">No preview yet</div>
-        <div class="empty-sub">Click "Generate Preview" to see what will be imported</div></div>`;
+        <div class="empty-sub">Click "Generate Preview"</div></div>`;
     } else {
       const rows = ir.issues_preview.map(iss=>`<tr>
         <td><span style="font-family:monospace;font-size:11px;font-weight:700">${esc(iss.tc_id)}</span></td>
         <td style="max-width:240px">${esc(iss.summary)}</td>
         <td><span class="pri-pill ${iss.priority}" style="font-size:10px">${iss.priority}</span></td>
         <td><span style="font-size:11px;background:#EFF6FF;color:#2563EB;padding:2px 7px;border-radius:99px;font-weight:600">Story</span></td>
-        <td><span style="font-size:11px;background:#F1F5F9;color:var(--txt2);padding:2px 7px;border-radius:99px">To Do</span></td>
       </tr>`).join('');
       body=`<div class="status-box ${ir.configured?'ready':'pending'}">
         <span style="font-size:18px">${ir.configured?'✅':'📋'}</span>
         <div><strong>${ir.configured?'Ready to Import':'Preview Mode'}</strong><br>${esc(ir.message)}</div>
       </div>
       <div style="overflow-x:auto"><table class="jira-table">
-        <thead><tr><th>TC ID</th><th>Summary</th><th>Priority</th><th>Type</th><th>Status</th></tr></thead>
+        <thead><tr><th>TC ID</th><th>Summary</th><th>Priority</th><th>Type</th></tr></thead>
         <tbody>${rows}</tbody>
       </table></div>`;
     }
@@ -920,13 +1360,24 @@ function refreshTab() {
   if (el) el.innerHTML = renderTabContent();
 }
 function afterRender() {
-  // re-scroll chat if visible
   const c = document.getElementById('chat-msgs');
   if (c) c.scrollTop = c.scrollHeight;
+  if (S.view === 'dashboard' && S.dashStats) {
+    initCharts(S.dashStats);
+  }
 }
 
 // ─── Actions ──────────────────────────────────────────────────────────────────
-function setView(v) { S.view=v; render(); }
+async function setView(v) {
+  S.view = v;
+  render();
+  if (v === 'dashboard') {
+    S.dashLoading = true;
+    try { S.dashStats = await api('GET', '/api/stats'); } catch { S.dashStats = null; }
+    S.dashLoading = false;
+    if (S.view === 'dashboard') render();
+  }
+}
 function setTab(t) { S.tab=t; S.tcPage=0; S.expandedId=null; S.editingId=null; S.tcSearch=''; renderMain(); }
 function toggleExpand(id) { S.expandedId=S.expandedId===id?null:id; S.editingId=null; refreshTab(); }
 function goPage(p) { S.tcPage=p; S.expandedId=null; refreshTab(); }
@@ -955,58 +1406,80 @@ async function saveEdit(id) {
   } catch(e) { alert('Save failed: '+e.message); }
 }
 
+function checkOos() {
+  const title = S.formTitle || '';
+  const OOS = [
+    {p:['unit test','unit testing','component test'], m:'Component/unit testing is out of scope for Lot B.'},
+    {p:['data migration','migration test','etl test'], m:'Data migration testing is out of scope for Lot B.'},
+    {p:['security test','pen test','penetration','vulnerability'], m:'Security/penetration testing is out of scope for Lot B.'},
+    {p:['geo stack regression','geo regression'], m:'GEO stack regression is out of scope — Lot B covers the LEO hybrid stack only.'},
+    {p:['legacy stack','legacy system','legacy regression'], m:'Legacy stack testing is out of scope for Lot B.'},
+  ];
+  const text = title.toLowerCase();
+  const matched = OOS.find(r => r.p.some(p => text.includes(p)));
+  const msg = matched ? matched.m : '';
+  if (S.oosWarning !== msg) { S.oosWarning = msg; renderMain(); }
+}
+
 async function generate() {
-  const title = document.getElementById('f-title')?.value?.trim();
+  // Read from state (persisted via oninput handlers — survives re-renders)
+  const title = (S.formTitle || document.getElementById('f-title')?.value || '').trim();
   if (!title) { document.getElementById('f-title')?.focus(); return; }
-  const module = document.getElementById('f-module')?.value||MODULES[0];
-  const testType = document.getElementById('f-type')?.value||TYPES[0];
-  const release = document.getElementById('f-release')?.value||'R1';
-  const description = document.getElementById('f-desc')?.value||'';
-  const testerName = document.getElementById('f-tester')?.value||'Anonymous';
-  S.release = release;
+  const description = S.formDesc || document.getElementById('f-desc')?.value || '';
+  const release = document.getElementById('f-release')?.value || S.release || 'R1';
+  const testerName = (S.formTester || document.getElementById('f-tester')?.value || 'Anonymous').trim() || 'Anonymous';
+  const chainMode = S.chainMode;
+  S.release = release; S.oosWarning = '';
+  S.loading=true; S.error=null; S.current=null;
+  S.chatMsgs=[]; S.newCasesAdded=0; S.loadingStart=Date.now(); render();
 
-  S.loading=true; S.error=null; S.progress=0; S.current=null;
-  S.chatMsgs=[]; S.newCasesAdded=0; render();
-
-  let stageIdx=0;
   progressTimer = setInterval(()=>{
-    S.progress = Math.min(S.progress+0.4, 97);
-    if (S.progress>=(stageIdx+1)*25 && stageIdx<3) stageIdx++;
-    const el=document.querySelector('.loading-bar-fill');
-    if (el) el.style.width=Math.min(S.progress+1,97)+'%';
-    const dots=document.querySelectorAll('.stage-dot');
-    const lbls=document.querySelectorAll('.stage-lbl');
-    dots.forEach((d,i)=>{
-      const st=i<stageIdx?'done':i===stageIdx?'run':'wait';
-      d.className='stage-dot '+st; if(lbls[i]) lbls[i].className='stage-lbl '+st;
-    });
-  },400);
+    const el = document.getElementById('elapsed-timer');
+    if (!el) return;
+    const elapsed = Math.round((Date.now() - S.loadingStart) / 1000);
+    const m = Math.floor(elapsed/60), s = elapsed%60;
+    el.textContent = `⏱ ${m>0?m+'m ':''}${s}s`;
+  }, 1000);
 
   try {
-    const session = await api('POST','/api/generate',{featureTitle:title,description,module,testType,release,testerName});
+    const session = await api('POST','/api/generate',{featureTitle:title, description, module:'', testType:'', release, chainMode, testerName});
     clearInterval(progressTimer);
-    S.current=session; S.tab='testcases'; S.tcPage=0; S.tcSearch='';
-    S.chatMsgs=[{role:'bot',text:`Hi! I've reviewed ${session.test_cases.length} test cases for "${session.feature_title}". Ask me anything — I can explain, refine, or generate additional test cases for specific areas.`}];
+    S.current=session; S.tab='overview'; S.tcPage=0; S.tcSearch='';
+    S.formTitle=''; S.formDesc=''; S.formTester='';
+    S.chatMsgs=[{role:'bot',text:`Generated ${session.test_cases.length} test cases across all types for "${session.feature_title}" (${session.module}). Ask me anything — I can explain, refine, or add more.`}];
     await fetchSessions();
   } catch(e) {
     clearInterval(progressTimer);
-    let msg=e.message; try{msg=JSON.parse(msg).detail||msg}catch{}
-    S.error=msg;
+    console.error('[Generate] raw error:', e);
+    let msg = e.message || String(e);
+    try {
+      const parsed = JSON.parse(msg);
+      console.error('[Generate] parsed error body:', parsed);
+      const detail = parsed.detail;
+      if (typeof detail === 'string') {
+        msg = detail;
+      } else if (Array.isArray(detail)) {
+        msg = detail.map(d => `${Array.isArray(d.loc) ? d.loc.slice(-1)[0] : ''}: ${d.msg || JSON.stringify(d)}`).join(' | ');
+      } else if (detail) {
+        msg = JSON.stringify(detail);
+      }
+    } catch {}
+    S.error = msg;
   } finally { S.loading=false; render(); }
 }
 
 async function loadSession(id, silent=false) {
   try {
     const s = await api('GET',`/api/sessions/${id}`);
-    S.current=s; S.tab='testcases'; S.tcPage=0; S.tcSearch=''; S.expandedId=null; S.editingId=null;
-    S.newCasesAdded=0;
-    S.chatMsgs=[{role:'bot',text:`Session loaded: ${s.test_cases.length} test cases for "${s.feature_title}". Ask me anything about these test cases.`}];
+    S.current=s; S.tab='overview'; S.tcPage=0; S.tcSearch=''; S.expandedId=null; S.editingId=null;
+    S.newCasesAdded=0; S.release=s.release||'R1'; S.chainMode=s.chain_mode||false; S.oosWarning='';
+    S.chatMsgs=[{role:'bot',text:`Session loaded: ${s.test_cases.length} test cases for "${s.feature_title}". Ask me anything.`}];
     if (!silent) { S.view='generate'; render(); }
     else refreshTab();
   } catch(e) { if(!silent) alert('Failed to load session: '+e.message); }
 }
 
-function newSession() { S.current=null; S.view='generate'; S.error=null; S.chatMsgs=[]; S.newCasesAdded=0; render(); }
+function newSession() { S.current=null; S.view='generate'; S.error=null; S.chatMsgs=[]; S.newCasesAdded=0; S.formTitle=''; S.formDesc=''; S.formTester=''; render(); }
 
 async function fetchSessions() {
   try { S.sessions=await api('GET','/api/sessions'); renderSidebar(); renderStats(); }
@@ -1021,7 +1494,7 @@ async function sendChat(query) {
     const r=await api('POST',`/api/sessions/${S.current.id}/followup`,{query});
     let txt=r.message;
     if (r.type==='new_cases'&&r.new_cases?.length>0) {
-      txt+=`\n\n✅ ${r.new_cases.length} new test case(s) added to this session.`;
+      txt+=`\n\n✅ ${r.new_cases.length} new test case(s) added.`;
       S.newCasesAdded+=r.new_cases.length;
       await loadSession(S.current.id,true);
     }
@@ -1035,37 +1508,21 @@ function sendChatFromInput() {
 }
 
 async function saveJiraSettings() {
-  const d={
-    jira_url:document.getElementById('s-url')?.value||'',
-    project_key:document.getElementById('s-key')?.value||'',
-    user_email:document.getElementById('s-email')?.value||'',
-    api_token:document.getElementById('s-token')?.value||'',
-  };
+  const d={jira_url:document.getElementById('s-url')?.value||'',project_key:document.getElementById('s-key')?.value||'',user_email:document.getElementById('s-email')?.value||'',api_token:document.getElementById('s-token')?.value||''};
   try {
-    await api('POST','/api/jira/config',d);
-    S.jiraCfg=d;
+    await api('POST','/api/jira/config',d); S.jiraCfg=d;
     const ok=document.getElementById('save-ok');
     if(ok){ok.style.display='';setTimeout(()=>ok.style.display='none',3000);}
   } catch(e) { alert('Error: '+e.message); }
 }
 async function saveJiraFromModal() {
-  const d={
-    jira_url:document.getElementById('m-url')?.value||'',
-    project_key:document.getElementById('m-key')?.value||'',
-    user_email:document.getElementById('m-email')?.value||'',
-    api_token:document.getElementById('m-token')?.value||'',
-  };
+  const d={jira_url:document.getElementById('m-url')?.value||'',project_key:document.getElementById('m-key')?.value||'',user_email:document.getElementById('m-email')?.value||'',api_token:document.getElementById('m-token')?.value||''};
   try { await api('POST','/api/jira/config',d); S.jiraCfg=d; alert('Jira configuration saved!'); }
   catch(e) { alert('Error: '+e.message); }
 }
 async function generateJiraPreview() {
   if (!S.current) return;
-  const d={
-    jira_url:document.getElementById('m-url')?.value||S.jiraCfg.jira_url,
-    project_key:document.getElementById('m-key')?.value||S.jiraCfg.project_key,
-    user_email:document.getElementById('m-email')?.value||S.jiraCfg.user_email,
-    api_token:document.getElementById('m-token')?.value||S.jiraCfg.api_token,
-  };
+  const d={jira_url:document.getElementById('m-url')?.value||S.jiraCfg.jira_url,project_key:document.getElementById('m-key')?.value||S.jiraCfg.project_key,user_email:document.getElementById('m-email')?.value||S.jiraCfg.user_email,api_token:document.getElementById('m-token')?.value||S.jiraCfg.api_token};
   try {
     await api('POST','/api/jira/config',d); S.jiraCfg=d;
     S.importResult=await api('POST',`/api/jira/import/${S.current.id}`,{});
@@ -1090,11 +1547,8 @@ async function pollRag() {
   try {
     const s = await api('GET','/api/rag/status');
     const wasReady = S.rag.ready;
-    S.rag = s;
-    updateRagBadge();
-    if (s.ingest_running || (!s.ready && !wasReady)) {
-      setTimeout(pollRag, 8000);
-    }
+    S.rag = s; updateRagBadge();
+    if (s.ingest_running || (!s.ready && !wasReady)) setTimeout(pollRag, 8000);
   } catch {}
 }
 
