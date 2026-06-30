@@ -17,6 +17,7 @@ from routes import generate, sessions, testcases, export, scope
 from routes import followup, jira as jira_routes
 from routes import rag as rag_routes
 from routes import automation as automation_routes
+from routes import framework as framework_routes
 from rag import ingest as rag_ingest
 from ai_pipeline import _make_client
 
@@ -86,6 +87,7 @@ app.include_router(followup.router,      prefix="/api", tags=["followup"])
 app.include_router(jira_routes.router,   prefix="/api", tags=["jira"])
 app.include_router(rag_routes.router,        prefix="/api", tags=["rag"])
 app.include_router(automation_routes.router, prefix="/api", tags=["automation"])
+app.include_router(framework_routes.router,   prefix="/api", tags=["framework"])
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 

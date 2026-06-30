@@ -348,6 +348,19 @@ textarea.finput{resize:vertical;min-height:72px}
 .script-info-box{background:#F0F9FF;border:1px solid #BAE6FD;border-radius:9px;padding:12px 16px;margin-bottom:16px;font-size:12px;color:#075985}
 .abtn.script-dl{background:#F5F3FF;color:#7C3AED;border:1.5px solid #DDD6FE}
 .abtn.script-dl:hover{background:#EDE9FE}
+.fw-run-panel{margin-top:14px;border:1.5px solid #E2E8F0;border-radius:10px;overflow:hidden}
+.fw-run-hdr{background:#F8FAFC;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #E2E8F0}
+.fw-run-title{font-size:12px;font-weight:700;color:var(--txt)}
+.fw-checks{padding:10px 16px;display:flex;flex-direction:column;gap:6px}
+.fw-check-row{display:flex;align-items:center;gap:8px;font-size:12px}
+.fw-check-icon{font-size:13px;width:18px;text-align:center}
+.fw-check-label{font-weight:600;color:var(--txt);min-width:160px}
+.fw-check-detail{color:var(--txt3);font-size:11px}
+.fw-output{background:#0F172A;color:#94A3B8;font-family:'Courier New',monospace;font-size:11px;line-height:1.55;padding:12px 16px;max-height:300px;overflow-y:auto;white-space:pre-wrap;word-break:break-all}
+.fw-summary{padding:10px 16px;display:flex;align-items:center;gap:14px;border-top:1px solid #E2E8F0;background:#F8FAFC}
+.fw-stat{font-size:13px;font-weight:700}
+.fw-stat.pass{color:#16A34A}
+.fw-stat.fail{color:#DC2626}
 </style>
 </head>
 <body>
@@ -445,6 +458,10 @@ const S = {
   scriptError: null,
   scriptExporting: false,
   scriptExportResult: null,
+  frameworkChecking: false,
+  frameworkCheck: null,
+  frameworkRunning: false,
+  frameworkRunResult: null,
 };
 let progressTimer = null;
 let chartInstances = {};
@@ -1134,7 +1151,7 @@ function renderScriptsTab() {
   const selectorHtml = SCRIPT_TYPES.map(st => {
     const isActive = S.scriptType === st.type;
     return `<button class="script-type-btn${isActive ? ' active' : ''}"
-      onclick="S.scriptType='${st.type}';S.scriptContent=null;S.scriptError=null;S.scriptExportResult=null;refreshTab()">
+      onclick="S.scriptType='${st.type}';S.scriptContent=null;S.scriptError=null;S.scriptExportResult=null;S.frameworkCheck=null;S.frameworkRunResult=null;refreshTab()">
       <span class="st-icon">${st.icon}</span>
       <span class="st-label">${st.label}</span>
       <span class="st-desc">${st.desc}</span>
@@ -1193,6 +1210,7 @@ function renderScriptsTab() {
           ? '✅ Exported to framework: ' + S.scriptExportResult.paths.join(' &nbsp;·&nbsp; ')
           : '❌ ' + esc(S.scriptExportResult.error)}
       </div>` : ''}
+      ${S.scriptExportResult && S.scriptExportResult.ok ? renderRunPanel() : ''}
       <pre class="script-code"><code>${esc(S.scriptContent)}</code></pre>
     </div>
     <div style="margin-top:12px;font-size:11px;color:var(--txt3);display:flex;gap:20px;flex-wrap:wrap">
@@ -1262,6 +1280,108 @@ function downloadScript() {
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
+}
+
+function renderRunPanel() {
+  const chk = S.frameworkCheck;
+  const res = S.frameworkRunResult;
+  const running = S.frameworkRunning;
+  const checking = S.frameworkChecking;
+
+  // Prereq rows (shown after check)
+  let checksHtml = '';
+  if (chk) {
+    const rows = Object.values(chk.checks).map(c => {
+      const icon = c.ok ? '✅' : '⚠️';
+      return `<div class="fw-check-row">
+        <span class="fw-check-icon">${icon}</span>
+        <span class="fw-check-label">${c.label}</span>
+        <span class="fw-check-detail">${esc(c.detail)}</span>
+      </div>`;
+    }).join('');
+    checksHtml = `<div class="fw-checks">${rows}</div>`;
+  }
+
+  // Run button state
+  const canRun = chk && chk.can_run && chk.can_run[S.scriptType];
+  const btnDisabled = running || checking || (chk && !canRun);
+  const btnLabel = running
+    ? '<span style="display:inline-block;animation:spin 1s linear infinite">⟳</span> Running tests…'
+    : checking
+    ? '<span style="display:inline-block;animation:spin 1s linear infinite">⟳</span> Checking…'
+    : '▶ Run Tests in SIT';
+  const btnTitle = chk && !canRun
+    ? 'Install missing prerequisites shown above first'
+    : 'Run the exported script against the SIT environment';
+
+  // Output terminal
+  let outputHtml = '';
+  if (running) {
+    outputHtml = `<div class="fw-output" style="color:#64748B;font-style:italic">Running ${S.scriptType} tests… this may take up to 2 minutes.</div>`;
+  } else if (res) {
+    const lines = esc(res.output || '(no output)');
+    const passColor = res.failed > 0 ? '#F87171' : '#4ADE80';
+    outputHtml = `
+      <div class="fw-output">${lines}</div>
+      <div class="fw-summary">
+        <span class="fw-stat pass">✓ ${res.passed} passed</span>
+        <span class="fw-stat fail">${res.failed > 0 ? '✗ ' + res.failed + ' failed' : ''}</span>
+        <span style="font-size:11px;color:var(--txt3);margin-left:auto">
+          ${res.report_path ? '📄 Report saved to ' + esc(res.report_path) : ''}
+        </span>
+      </div>`;
+  }
+
+  return `<div class="fw-run-panel">
+    <div class="fw-run-hdr">
+      <span class="fw-run-title">🚀 Run Tests in SIT Environment</span>
+      <button class="abtn" onclick="checkAndRun()"
+        style="padding:6px 16px;font-size:12px;font-weight:700;
+          background:${canRun||!chk?'linear-gradient(135deg,#059669,#0284C7)':'#E2E8F0'};
+          color:${canRun||!chk?'#fff':'#94A3B8'};border:none;
+          ${btnDisabled?'opacity:.7;pointer-events:none':''}"
+        title="${btnTitle}">
+        ${btnLabel}
+      </button>
+    </div>
+    ${checksHtml}
+    ${outputHtml}
+  </div>`;
+}
+
+async function checkAndRun() {
+  if (!S.current || S.frameworkRunning || S.frameworkChecking) return;
+
+  // Step 1: check prerequisites
+  S.frameworkChecking = true;
+  S.frameworkCheck = null;
+  S.frameworkRunResult = null;
+  refreshTab();
+  try {
+    S.frameworkCheck = await api('GET', '/api/framework/check');
+  } catch (e) {
+    S.frameworkCheck = null;
+    S.frameworkChecking = false;
+    refreshTab();
+    return;
+  }
+  S.frameworkChecking = false;
+  refreshTab();
+
+  // Step 2: only run if this script type's prereqs are met
+  if (!S.frameworkCheck.can_run[S.scriptType]) return;
+
+  S.frameworkRunning = true;
+  refreshTab();
+  try {
+    S.frameworkRunResult = await api('POST', `/api/framework/run/${S.current.id}?script_type=${S.scriptType}`);
+  } catch (e) {
+    let msg = e.message || String(e);
+    try { const p = JSON.parse(msg); msg = p.detail || msg; } catch {}
+    S.frameworkRunResult = { output: 'Error: ' + msg, passed: 0, failed: 0, success: false };
+  }
+  S.frameworkRunning = false;
+  refreshTab();
 }
 
 async function exportToFramework() {
@@ -1664,13 +1784,14 @@ async function loadSession(id, silent=false) {
     S.current=s; S.tab='overview'; S.tcPage=0; S.tcSearch=''; S.expandedId=null; S.editingId=null;
     S.newCasesAdded=0; S.release=s.release||'R1'; S.chainMode=s.chain_mode||false; S.oosWarning='';
     S.scriptContent=null; S.scriptError=null; S.scriptLoading=false; S.scriptExportResult=null;
+    S.frameworkCheck=null; S.frameworkRunResult=null; S.frameworkRunning=false;
     S.chatMsgs=[{role:'bot',text:`Session loaded: ${s.test_cases.length} test cases for "${s.feature_title}". Ask me anything.`}];
     if (!silent) { S.view='generate'; render(); }
     else refreshTab();
   } catch(e) { if(!silent) alert('Failed to load session: '+e.message); }
 }
 
-function newSession() { S.current=null; S.view='generate'; S.error=null; S.chatMsgs=[]; S.newCasesAdded=0; S.formTitle=''; S.formDesc=''; S.formTester=''; S.scriptContent=null; S.scriptError=null; S.scriptLoading=false; S.scriptExportResult=null; render(); }
+function newSession() { S.current=null; S.view='generate'; S.error=null; S.chatMsgs=[]; S.newCasesAdded=0; S.formTitle=''; S.formDesc=''; S.formTester=''; S.scriptContent=null; S.scriptError=null; S.scriptLoading=false; S.scriptExportResult=null; S.frameworkCheck=null; S.frameworkRunResult=null; S.frameworkRunning=false; render(); }
 
 async function fetchSessions() {
   try { S.sessions=await api('GET','/api/sessions'); renderSidebar(); renderStats(); }
