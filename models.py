@@ -84,3 +84,13 @@ class DocumentChunk(Base):
     text = Column(Text, nullable=False)
     embedding = Column(Text, default="[]")
     created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class AutomationScript(Base):
+    __tablename__ = "automation_scripts"
+
+    id = Column(Integer, primary_key=True, index=True)
+    session_id = Column(Integer, ForeignKey("sessions.id"), nullable=False)
+    script_type = Column(String(20), nullable=False)  # postman | playwright | python
+    content = Column(Text, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)

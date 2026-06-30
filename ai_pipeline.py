@@ -507,6 +507,238 @@ OR
     return {"type": "answer", "message": "I had trouble processing that. Please try rephrasing.", "new_cases": []}
 
 
+# ── Agent 5: Automation Script Generator ─────────────────────────────────────
+
+_MODULE_BASE_PATHS = {
+    "Customer Portal":           "/api/portal/v1",
+    "Contracts / CIM":           "/api/crm/v1",
+    "CPQ / EPC":                 "/api/cpq/v1",
+    "Order Management":          "/api/orders/v1",
+    "Billing / Charging":        "/api/billing/v1",
+    "Inv. & Accounting":         "/api/invoicing/v1",
+    "API / Integration":         "/api/integration/v1",
+    "Provisioning / Activation": "/api/provisioning/v1",
+    "ServiceNow / ITSM":         "/api/itsm/v1",
+}
+
+
+def _clean_code(text: str, lang: str) -> str:
+    """Strip markdown code fences from LLM output."""
+    text = text.strip()
+    text = re.sub(rf"^```(?:{lang}|json|javascript|js|python|py)?\s*\n?", "", text, flags=re.MULTILINE)
+    text = re.sub(r"\n?```\s*$", "", text, flags=re.MULTILINE)
+    return text.strip()
+
+
+def _http_method(tc: dict) -> str:
+    """Infer HTTP method from test case description/steps."""
+    text = f"{tc.get('description','')} {tc.get('steps','')}".lower()
+    if any(k in text for k in ["terminat", "delet", "cancel", "deactivat", "remov"]):
+        return "DELETE"
+    if any(k in text for k in ["creat", "add", "new order", "submit", "set up", "setup", "configure", "provisio", "place"]):
+        return "POST"
+    if any(k in text for k in ["updat", "amend", "modif", "chang", "edit", "patch", "mid-cycle"]):
+        return "PATCH"
+    if any(k in text for k in ["full update", "replac", "overwrite"]):
+        return "PUT"
+    return "GET"
+
+
+def _gen_postman(feature_title: str, module: str, system: str, tc_json: str) -> str:
+    """Build Postman Collection v2.1 JSON programmatically — always valid, never truncated."""
+    tc_list = json.loads(tc_json)
+    base_path = _MODULE_BASE_PATHS.get(module, "/api/v1")
+
+    # Ask the AI only for short pm.test() assertion strings (one line per TC)
+    tc_specs = json.dumps([{"id": tc.get("tc_id", ""), "expected": tc.get("expected_result", "")[:120]} for tc in tc_list], indent=2)
+    assert_prompt = (
+        "For each test case below, write ONE short pm.test() assertion string (max 120 chars) that checks the expected_result.\n"
+        "Format: return ONLY a JSON array of strings, one per test case, in the same order.\n"
+        "Each string is a complete pm.test() call, e.g.:\n"
+        "  \"pm.test('Order status is Active', function(){pm.expect(pm.response.json().status).to.equal('Active');}});\"\n\n"
+        "Test cases:\n"
+        + tc_specs
+        + f"\n\nReturn ONLY a JSON array of {len(tc_list)} strings — no markdown."
+    )
+
+    assertions = []
+    try:
+        raw = _call(assert_prompt, max_tokens=1200)
+        raw = _clean_code(raw, "json")
+        parsed = _extract_json(raw)
+        if isinstance(parsed, list) and len(parsed) == len(tc_list):
+            assertions = [str(a) for a in parsed]
+    except Exception:
+        pass
+    # Fallback assertions
+    while len(assertions) < len(tc_list):
+        assertions.append("pm.test('Status 200 OK', function(){pm.response.to.have.status(200);});")
+
+    # Build path segments from base_path
+    path_parts = [p for p in base_path.strip("/").split("/") if p] + ["{{DP_ID}}"]
+
+    items = []
+    for i, tc in enumerate(tc_list):
+        method = _http_method(tc)
+        body = None
+        if method in ("POST", "PUT", "PATCH"):
+            body = {"mode": "raw", "raw": "{\"placeholder\": true}", "options": {"raw": {"language": "json"}}}
+
+        item: dict = {
+            "name": f"[{tc.get('tc_id','TC')}] {tc.get('description','')[:60]}",
+            "event": [{"listen": "test", "script": {
+                "exec": [
+                    "pm.test('Status OK', function(){pm.response.to.have.status(200);});",
+                    assertions[i],
+                ],
+                "type": "text/javascript",
+            }}],
+            "request": {
+                "method": method,
+                "header": [
+                    {"key": "Authorization", "value": "Bearer {{AUTH_TOKEN}}"},
+                    {"key": "Content-Type",  "value": "application/json"},
+                ],
+                "url": {
+                    "raw": "{{BASE_URL}}" + base_path + "/{{DP_ID}}",
+                    "host": ["{{BASE_URL}}"],
+                    "path": path_parts,
+                },
+            },
+        }
+        if body:
+            item["request"]["body"] = body
+        items.append(item)
+
+    collection = {
+        "info": {
+            "name": f"{feature_title} — {module} API Tests",
+            "_postman_id": f"eutl-{module[:6].lower().replace(' ', '-').replace('/', '-')}",
+            "description": (
+                f"Automated API tests for: {feature_title}\n"
+                f"Module: {module} | System: {system}\n"
+                f"Generated by Eutelsat GenAI Test Case Generator\n\n"
+                f"Setup: Set BASE_URL to your SIT environment URL.\n"
+                f"Run: newman run <collection.json> --env-var BASE_URL=https://sit.eutelsat.com --env-var AUTH_TOKEN=<token>"
+            ),
+            "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+        },
+        "variable": [
+            {"key": "BASE_URL",     "value": "https://sit.eutelsat.com", "type": "string"},
+            {"key": "AUTH_TOKEN",   "value": "",                          "type": "string"},
+            {"key": "DP_ID",        "value": "DP-TEST-001",               "type": "string"},
+            {"key": "CONTRACT_ID",  "value": "CNT-TEST-001",              "type": "string"},
+            {"key": "ORDER_ID",     "value": "ORD-TEST-001",              "type": "string"},
+        ],
+        "item": items,
+    }
+    return json.dumps(collection, indent=2)
+
+
+def _gen_playwright(feature_title: str, module: str, system: str, tc_json: str) -> str:
+    prompt = f"""You are a senior test automation engineer for the Eutelsat CxP BSS/OSS programme.
+Generate a complete Playwright test script in JavaScript for UI/browser automation.
+
+Feature: {feature_title}
+Module: {module}
+System: {system}
+Full stack context: {SYSTEM_STACK}
+
+Test cases to implement:
+{tc_json}
+
+REQUIREMENTS:
+1. Output ONLY valid JavaScript — no markdown fences, no explanation
+2. Use @playwright/test: const {{ test, expect }} = require('@playwright/test')
+3. Read config from env: BASE_URL (default https://sit.eutelsat.com), TEST_USERNAME, TEST_PASSWORD
+4. Wrap all tests in test.describe('{feature_title}', () => {{ ... }})
+5. test.beforeAll: navigate to login page, fill credentials, click submit, waitForLoadState('networkidle')
+6. One test() per test case — name: '[TC_ID] description (first 65 chars)'
+7. Each test: await page.goto(URL), waitForLoadState, step-by-step actions, expect() assertions
+8. Use locator('[data-testid="..."]') or getByRole() selectors — prefer semantic
+9. Assertions must verify the expected_result of each test case
+10. test.afterAll: clean up test data via API if needed (commented stub)
+11. Export a playwright.config.js stub as a comment block at the top of the file
+12. Add // STEP N: comment for each distinct action (mirrors the test case steps)
+"""
+    raw = _call(prompt, max_tokens=5120)
+    return _clean_code(raw, "javascript")
+
+
+def _gen_python(feature_title: str, module: str, system: str, tc_json: str) -> str:
+    base_path = _MODULE_BASE_PATHS.get(module, "/api/v1")
+    prompt = f"""You are a senior test automation engineer for the Eutelsat CxP BSS/OSS programme.
+Generate a complete Python pytest test script using the requests library for API testing.
+
+Feature: {feature_title}
+Module: {module}
+System: {system}
+API Base Path: {{BASE_URL}}{base_path}
+Full stack context: {SYSTEM_STACK}
+
+Test cases to implement:
+{tc_json}
+
+REQUIREMENTS:
+1. Output ONLY valid Python — no markdown fences, no explanation
+2. Imports: pytest, requests, os, json
+3. Module-level constants from environment: BASE_URL, AUTH_TOKEN, DP_ACCOUNT_ID, CONTRACT_ID
+4. Session-scoped fixture auth_session() returning requests.Session with Bearer auth headers
+5. One test function per test case — name: test_[tc_id_lower]_[3_word_description]
+6. Docstring first line: "TC-XXX: full description."
+7. Pattern per test:
+   a. endpoint = f'{{BASE_URL}}{base_path}/resource/...'
+   b. response = auth_session.METHOD(endpoint, json={{...}})
+   c. assert response.status_code == NNN, f"Expected NNN, got {{response.status_code}}: {{response.text[:200]}}"
+   d. data = response.json() — then assert specific fields from expected_result
+8. Include parametrize decorator for data-driven tests where the steps suggest multiple inputs
+9. Add a conftest.py comment block at the very top showing what to put in conftest.py
+10. Add @pytest.mark.smoke on High priority test cases, @pytest.mark.regression on Regression type
+"""
+    raw = _call(prompt, max_tokens=5120)
+    return _clean_code(raw, "python")
+
+
+def automation_agent(
+    feature_title: str,
+    module: str,
+    system: str,
+    test_cases: list[dict],
+    script_type: str,
+) -> str:
+    """Generate Postman / Playwright / Python automation scripts from test cases."""
+    # Prefer automation candidates; fall back to all if none tagged
+    auto = [tc for tc in test_cases if tc.get("automation_candidate")]
+    pool = auto if auto else test_cases
+    # Postman JSON is verbose — cap lower to avoid truncation
+    cap = 8 if script_type == "postman" else 12
+    pool = pool[:cap]
+
+    tc_list = [
+        {
+            "tc_id":          tc.get("tc_id", f"TC-{i+1:03d}"),
+            "description":    tc.get("description", ""),
+            "steps":          tc.get("steps", ""),
+            "expected_result":tc.get("expected_result", ""),
+            "priority":       tc.get("priority", "Medium"),
+            "type":           tc.get("type", "Functional"),
+            "automation_notes": tc.get("automation_notes", ""),
+        }
+        for i, tc in enumerate(pool)
+    ]
+    tc_json = json.dumps(tc_list, indent=2)
+
+    _p(f"\n[Automation Agent] Generating {script_type} script for '{feature_title}' ({len(tc_list)} cases)...")
+    if script_type == "postman":
+        return _gen_postman(feature_title, module, system, tc_json)
+    elif script_type == "playwright":
+        return _gen_playwright(feature_title, module, system, tc_json)
+    elif script_type == "python":
+        return _gen_python(feature_title, module, system, tc_json)
+    else:
+        raise ValueError(f"Unknown script_type: {script_type}")
+
+
 # ── Main Pipeline ─────────────────────────────────────────────────────────────
 
 CASES_PER_AREA = 5

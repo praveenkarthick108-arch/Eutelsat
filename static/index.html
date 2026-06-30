@@ -330,6 +330,24 @@ textarea.finput{resize:vertical;min-height:72px}
 .scope-item-risk{display:inline-flex;align-items:center;gap:3px;margin-top:5px;padding:2px 7px;border-radius:99px;font-size:10px;font-weight:700;background:#FEF2F2;color:#DC2626}
 .scope-item-cta{position:absolute;bottom:9px;right:13px;font-size:10px;font-weight:700;color:var(--blue);opacity:0;transition:opacity .12s}
 .scope-item:hover .scope-item-cta{opacity:1}
+
+/* ── Automation Scripts ── */
+.script-type-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px}
+.script-type-btn{display:flex;flex-direction:column;gap:3px;padding:11px 16px;border-radius:10px;border:1.5px solid var(--border);background:var(--card);cursor:pointer;transition:all .15s;min-width:170px;text-align:left}
+.script-type-btn:hover{border-color:var(--blue);background:#EFF6FF}
+.script-type-btn.active{border-color:var(--blue);background:#EFF6FF;box-shadow:0 0 0 3px rgba(59,130,246,.12)}
+.script-type-btn .st-icon{font-size:20px;line-height:1}
+.script-type-btn .st-label{font-size:13px;font-weight:700;color:var(--txt)}
+.script-type-btn .st-desc{font-size:11px;color:var(--txt3);line-height:1.4}
+.script-output{border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-top:4px}
+.script-output-hdr{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--bg);border-bottom:1px solid var(--border)}
+.script-output-label{font-size:12px;font-weight:600;color:var(--txt2);display:flex;align-items:center;gap:7px}
+.script-code{background:#0F172A;color:#E2E8F0;padding:18px 20px;font-family:'Courier New',Courier,monospace;font-size:12px;line-height:1.6;overflow:auto;max-height:520px;white-space:pre;tab-size:2}
+.script-regen-btn{padding:4px 11px;border-radius:7px;font-size:11px;font-weight:600;background:transparent;border:1.5px solid var(--border);color:var(--txt3);cursor:pointer;transition:all .15s}
+.script-regen-btn:hover{border-color:var(--blue);color:var(--blue)}
+.script-info-box{background:#F0F9FF;border:1px solid #BAE6FD;border-radius:9px;padding:12px 16px;margin-bottom:16px;font-size:12px;color:#075985}
+.abtn.script-dl{background:#F5F3FF;color:#7C3AED;border:1.5px solid #DDD6FE}
+.abtn.script-dl:hover{background:#EDE9FE}
 </style>
 </head>
 <body>
@@ -421,6 +439,10 @@ const S = {
   oosWarning: '',
   dashStats: null,
   dashLoading: false,
+  scriptType: 'postman',
+  scriptContent: null,
+  scriptLoading: false,
+  scriptError: null,
 };
 let progressTimer = null;
 let chartInstances = {};
@@ -840,6 +862,7 @@ function renderResults() {
   }
   tabs.push({key:'metrics', label:'Quality Metrics', count:null, cls:''});
   tabs.push({key:'followup', label:'Follow-up Chat', count:null, cls:''});
+  tabs.push({key:'scripts', label:'⚙ Automation Scripts', count:null, cls:''});
 
   const tabHtml = tabs.map(t => {
     const active = S.tab===t.key;
@@ -878,6 +901,7 @@ function renderResults() {
 function renderTabContent() {
   if (S.tab==='metrics')   return renderMetricsTab();
   if (S.tab==='followup')  return renderFollowupTab();
+  if (S.tab==='scripts')   return renderScriptsTab();
   // overview or a type tab
   const tc = S.current?.test_cases||[];
   const typeFilter = S.tab==='overview' ? null : S.tab;
@@ -1090,6 +1114,138 @@ function renderFollowupTab() {
       </button>
     </div>
   </div>`;
+}
+
+// ─── Automation Scripts Tab ───────────────────────────────────────────────────
+const SCRIPT_TYPES = [
+  {type:'postman',    icon:'📮', label:'Postman Collection', desc:'REST API tests for all module endpoints · imports directly into Postman · run with Newman CLI', ext:'.json'},
+  {type:'playwright', icon:'🎭', label:'Playwright',         desc:'Browser UI automation for Customer Portal · @playwright/test · runs in Chrome/Firefox/Safari', ext:'.js'},
+  {type:'python',     icon:'🐍', label:'Python pytest',      desc:'API tests via requests library · pytest fixtures · CI/CD pipeline ready · @pytest.mark.smoke', ext:'.py'},
+];
+
+function renderScriptsTab() {
+  const s = S.current;
+  const tc = s.test_cases || [];
+  const autoCount = tc.filter(t => t.automation_candidate).length;
+  const totalCount = tc.length;
+
+  const selectorHtml = SCRIPT_TYPES.map(st => {
+    const isActive = S.scriptType === st.type;
+    return `<button class="script-type-btn${isActive ? ' active' : ''}"
+      onclick="S.scriptType='${st.type}';S.scriptContent=null;S.scriptError=null;refreshTab()">
+      <span class="st-icon">${st.icon}</span>
+      <span class="st-label">${st.label}</span>
+      <span class="st-desc">${st.desc}</span>
+    </button>`;
+  }).join('');
+
+  const cfg = SCRIPT_TYPES.find(t => t.type === S.scriptType);
+  let bodyHtml = '';
+
+  if (S.scriptLoading) {
+    bodyHtml = `<div style="text-align:center;padding:44px 20px">
+      <div style="font-size:15px;font-weight:700;color:var(--txt);margin-bottom:8px">Generating ${cfg.label} script…</div>
+      <div style="font-size:13px;color:var(--txt2);margin-bottom:18px">
+        AI is reading ${autoCount} automation-candidate test cases and converting them to executable code.
+        <br><span style="color:var(--txt3);font-size:12px">This takes ~30–60 seconds.</span>
+      </div>
+      <div class="loading-bar-track" style="max-width:440px;margin:0 auto">
+        <div class="loading-bar-fill"></div>
+      </div>
+    </div>`;
+  } else if (S.scriptError) {
+    bodyHtml = `<div style="padding:16px 20px">
+      <div class="error-box">⚠️ ${esc(S.scriptError)}</div>
+      <button onclick="S.scriptError=null;generateScript()"
+        style="padding:8px 20px;background:var(--blue);color:#fff;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;border:none">
+        Retry
+      </button>
+    </div>`;
+  } else if (S.scriptContent) {
+    const langLabel = S.scriptType === 'postman' ? 'JSON' : S.scriptType === 'playwright' ? 'JavaScript' : 'Python';
+    bodyHtml = `<div class="script-output">
+      <div class="script-output-hdr">
+        <span class="script-output-label">
+          ${cfg.icon} ${cfg.label} &nbsp;·&nbsp;
+          <span style="font-weight:400;color:var(--txt3)">${langLabel} · ${autoCount} automation candidates</span>
+        </span>
+        <div style="display:flex;gap:8px;align-items:center">
+          <button class="script-regen-btn" onclick="regenScript()" title="Regenerate script">↺ Regenerate</button>
+          <button class="abtn script-dl" onclick="downloadScript()" style="padding:6px 14px;font-size:12px">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+            Download ${cfg.ext}
+          </button>
+        </div>
+      </div>
+      <pre class="script-code"><code>${esc(S.scriptContent)}</code></pre>
+    </div>
+    <div style="margin-top:12px;font-size:11px;color:var(--txt3);display:flex;gap:20px;flex-wrap:wrap">
+      <span>💡 Replace <strong>BASE_URL</strong> with your SIT environment URL before running</span>
+      <span>🔑 Set <strong>AUTH_TOKEN</strong> / <strong>TEST_USERNAME</strong> / <strong>TEST_PASSWORD</strong> as env vars</span>
+    </div>`;
+  } else {
+    bodyHtml = `<div style="padding:22px 0">
+      <div class="script-info-box">
+        <strong>${autoCount} of ${totalCount}</strong> test cases are tagged as automation candidates.
+        The AI will generate a complete, structured ${cfg.label} script — including assertions, environment variables,
+        and ${S.scriptType === 'postman' ? 'pm.test() verifications' : S.scriptType === 'playwright' ? 'expect() assertions and page navigation' : 'pytest fixtures and assert statements'}.
+        Fill in placeholder values (BASE_URL, AUTH_TOKEN) before executing against the SIT environment.
+      </div>
+      <button onclick="generateScript()"
+        style="display:inline-flex;align-items:center;gap:9px;padding:12px 28px;background:linear-gradient(135deg,#3B82F6,#8B5CF6);color:#fff;border-radius:9px;font-size:14px;font-weight:700;cursor:pointer;border:none;box-shadow:0 4px 14px rgba(59,130,246,.35)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg>
+        Generate ${cfg.label} Script
+      </button>
+      <div style="margin-top:12px;font-size:12px;color:var(--txt3)">~30–60 seconds · result is cached for this session</div>
+    </div>`;
+  }
+
+  return `<div style="padding:18px 20px">
+    <div style="font-size:13px;font-weight:700;color:var(--txt);margin-bottom:12px">Select automation script type:</div>
+    <div class="script-type-row">${selectorHtml}</div>
+    ${bodyHtml}
+  </div>`;
+}
+
+async function generateScript() {
+  if (!S.current || S.scriptLoading) return;
+  S.scriptLoading = true;
+  S.scriptError = null;
+  S.scriptContent = null;
+  refreshTab();
+  try {
+    const res = await api('POST', `/api/automation/${S.current.id}?script_type=${S.scriptType}`);
+    S.scriptContent = res.content;
+  } catch (e) {
+    let msg = e.message || String(e);
+    try { const p = JSON.parse(msg); msg = p.detail || msg; } catch {}
+    S.scriptError = msg;
+  }
+  S.scriptLoading = false;
+  refreshTab();
+}
+
+async function regenScript() {
+  if (!S.current) return;
+  try { await api('DELETE', `/api/automation/${S.current.id}?script_type=${S.scriptType}`); } catch {}
+  S.scriptContent = null;
+  await generateScript();
+}
+
+function downloadScript() {
+  if (!S.current || !S.scriptContent) return;
+  const cfg = SCRIPT_TYPES.find(t => t.type === S.scriptType);
+  const mime = S.scriptType === 'postman' ? 'application/json' : 'text/plain';
+  const blob = new Blob([S.scriptContent], {type: mime});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const safe = S.current.feature_title.slice(0,40).replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_-]/g,'');
+  a.href = url;
+  a.download = `Eutelsat_${safe}_${S.scriptType}${cfg.ext}`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
 // ─── Dashboard ────────────────────────────────────────────────────────────────
@@ -1473,13 +1629,14 @@ async function loadSession(id, silent=false) {
     const s = await api('GET',`/api/sessions/${id}`);
     S.current=s; S.tab='overview'; S.tcPage=0; S.tcSearch=''; S.expandedId=null; S.editingId=null;
     S.newCasesAdded=0; S.release=s.release||'R1'; S.chainMode=s.chain_mode||false; S.oosWarning='';
+    S.scriptContent=null; S.scriptError=null; S.scriptLoading=false;
     S.chatMsgs=[{role:'bot',text:`Session loaded: ${s.test_cases.length} test cases for "${s.feature_title}". Ask me anything.`}];
     if (!silent) { S.view='generate'; render(); }
     else refreshTab();
   } catch(e) { if(!silent) alert('Failed to load session: '+e.message); }
 }
 
-function newSession() { S.current=null; S.view='generate'; S.error=null; S.chatMsgs=[]; S.newCasesAdded=0; S.formTitle=''; S.formDesc=''; S.formTester=''; render(); }
+function newSession() { S.current=null; S.view='generate'; S.error=null; S.chatMsgs=[]; S.newCasesAdded=0; S.formTitle=''; S.formDesc=''; S.formTester=''; S.scriptContent=null; S.scriptError=null; S.scriptLoading=false; render(); }
 
 async function fetchSessions() {
   try { S.sessions=await api('GET','/api/sessions'); renderSidebar(); renderStats(); }
