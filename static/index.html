@@ -443,6 +443,8 @@ const S = {
   scriptContent: null,
   scriptLoading: false,
   scriptError: null,
+  scriptExporting: false,
+  scriptExportResult: null,
 };
 let progressTimer = null;
 let chartInstances = {};
@@ -1132,7 +1134,7 @@ function renderScriptsTab() {
   const selectorHtml = SCRIPT_TYPES.map(st => {
     const isActive = S.scriptType === st.type;
     return `<button class="script-type-btn${isActive ? ' active' : ''}"
-      onclick="S.scriptType='${st.type}';S.scriptContent=null;S.scriptError=null;refreshTab()">
+      onclick="S.scriptType='${st.type}';S.scriptContent=null;S.scriptError=null;S.scriptExportResult=null;refreshTab()">
       <span class="st-icon">${st.icon}</span>
       <span class="st-label">${st.label}</span>
       <span class="st-desc">${st.desc}</span>
@@ -1169,14 +1171,28 @@ function renderScriptsTab() {
           ${cfg.icon} ${cfg.label} &nbsp;·&nbsp;
           <span style="font-weight:400;color:var(--txt3)">${langLabel} · ${autoCount} automation candidates</span>
         </span>
-        <div style="display:flex;gap:8px;align-items:center">
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
           <button class="script-regen-btn" onclick="regenScript()" title="Regenerate script">↺ Regenerate</button>
           <button class="abtn script-dl" onclick="downloadScript()" style="padding:6px 14px;font-size:12px">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
             Download ${cfg.ext}
           </button>
+          <button class="abtn" onclick="exportToFramework()"
+            style="padding:6px 14px;font-size:12px;background:#F0FDF4;color:#16A34A;border:1.5px solid #BBF7D0;${S.scriptExporting?'opacity:.6;pointer-events:none':''}">
+            ${S.scriptExporting
+              ? '<span style="display:inline-block;animation:spin 1s linear infinite">⟳</span> Exporting…'
+              : '📁 Export to Framework'}
+          </button>
         </div>
       </div>
+      ${S.scriptExportResult ? `<div style="margin:10px 0 0;padding:10px 14px;border-radius:8px;font-size:12px;
+          background:${S.scriptExportResult.ok?'#F0FDF4':'#FEF2F2'};
+          border:1px solid ${S.scriptExportResult.ok?'#BBF7D0':'#FECACA'};
+          color:${S.scriptExportResult.ok?'#15803D':'#B91C1C'}">
+        ${S.scriptExportResult.ok
+          ? '✅ Exported to framework: ' + S.scriptExportResult.paths.join(' &nbsp;·&nbsp; ')
+          : '❌ ' + esc(S.scriptExportResult.error)}
+      </div>` : ''}
       <pre class="script-code"><code>${esc(S.scriptContent)}</code></pre>
     </div>
     <div style="margin-top:12px;font-size:11px;color:var(--txt3);display:flex;gap:20px;flex-wrap:wrap">
@@ -1246,6 +1262,24 @@ function downloadScript() {
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
+}
+
+async function exportToFramework() {
+  if (!S.current || !S.scriptContent || S.scriptExporting) return;
+  S.scriptExporting = true;
+  S.scriptExportResult = null;
+  refreshTab();
+  try {
+    const res = await api('POST', `/api/automation/${S.current.id}/export?script_type=${S.scriptType}`);
+    const paths = (res.exported || []).map(e => e.path);
+    S.scriptExportResult = { ok: true, paths };
+  } catch (e) {
+    let msg = e.message || String(e);
+    try { const p = JSON.parse(msg); msg = p.detail || msg; } catch {}
+    S.scriptExportResult = { ok: false, error: msg };
+  }
+  S.scriptExporting = false;
+  refreshTab();
 }
 
 // ─── Dashboard ────────────────────────────────────────────────────────────────
@@ -1629,14 +1663,14 @@ async function loadSession(id, silent=false) {
     const s = await api('GET',`/api/sessions/${id}`);
     S.current=s; S.tab='overview'; S.tcPage=0; S.tcSearch=''; S.expandedId=null; S.editingId=null;
     S.newCasesAdded=0; S.release=s.release||'R1'; S.chainMode=s.chain_mode||false; S.oosWarning='';
-    S.scriptContent=null; S.scriptError=null; S.scriptLoading=false;
+    S.scriptContent=null; S.scriptError=null; S.scriptLoading=false; S.scriptExportResult=null;
     S.chatMsgs=[{role:'bot',text:`Session loaded: ${s.test_cases.length} test cases for "${s.feature_title}". Ask me anything.`}];
     if (!silent) { S.view='generate'; render(); }
     else refreshTab();
   } catch(e) { if(!silent) alert('Failed to load session: '+e.message); }
 }
 
-function newSession() { S.current=null; S.view='generate'; S.error=null; S.chatMsgs=[]; S.newCasesAdded=0; S.formTitle=''; S.formDesc=''; S.formTester=''; S.scriptContent=null; S.scriptError=null; S.scriptLoading=false; render(); }
+function newSession() { S.current=null; S.view='generate'; S.error=null; S.chatMsgs=[]; S.newCasesAdded=0; S.formTitle=''; S.formDesc=''; S.formTester=''; S.scriptContent=null; S.scriptError=null; S.scriptLoading=false; S.scriptExportResult=null; render(); }
 
 async function fetchSessions() {
   try { S.sessions=await api('GET','/api/sessions'); renderSidebar(); renderStats(); }
